@@ -1,4 +1,4 @@
-# Introduction
+# Introduction to the Lab Environment Standards
 
 This guide describes the lab environment standards used by the SUSE Training organization. The reasons for these standards are many but essentially boil down to making sure we have a consistent way of doing things so that it will be easier to consume by the end user and easier to develop by the course developers. An added benefit to following these standards is that there are a number of tools that have and will be created that make developing and working with lab environments much quicker and easier. A list of these tools will be maintained at the end of this document and there may be additional documents that provide greater detail on using these tools.
 
