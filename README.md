@@ -212,17 +212,11 @@ By default VM archives are created using p7zip with the compression format of LZ
 Archive Format | Description
 ------------ | -------------
 **7zma2** |- p7zip with LZMA2 compression split into 2G files
-
 **7z** | p7zip with LZMA compression split into 2G files
-
 **7zcopy** | p7zip with no compression split into 2G files
-
 **tar** | tar archive with no compression and not split
-
 **tgz** | gzip compressed tar archive and not split
-
 **tbz** | bzip2 compressed tar archive and not split
-
 **txz** | xz compressed tar archive and not split
 
 
@@ -266,17 +260,11 @@ By default VM archives are created using p7zip with the compression format of LZ
 Archive Format | Description
 ------------ | -------------
 **7zma2** |- p7zip with LZMA2 compression split into 2G files
-
 **7z** | p7zip with LZMA compression split into 2G files
-
 **7zcopy** | p7zip with no compression split into 2G files
-
 **tar** | tar archive with no compression and not split
-
 **tgz** | gzip compressed tar archive and not split
-
 **tbz** | bzip2 compressed tar archive and not split
-
 **txz** | xz compressed tar archive and not split
 
 
