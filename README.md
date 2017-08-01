@@ -372,7 +372,7 @@ remove-all-vnets.sh
 restore-homedirs.sh ${LAB_USER}
 ```
 
-It should clean off all installed courses as well as any Libvirt VMs and Libvirt virtual networks that were manually created or not cleaned up by course removal scripts. When that is done, if a backup was made of the ${LAB_USER} (by default tux) home directory, it restores the backup.
+It should clean off all installed courses as well as any Libvirt VMs and Libvirt virtual networks that were manually created or not cleaned up by course removal scripts. When that is done, if a backup was made of the **${LAB_USER}** (by default **tux**) home directory, it restores the backup.
 
 **Usage**:
 ```
