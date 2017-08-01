@@ -80,22 +80,26 @@ To have the VM connect to these Linux bridges on the VLANs rather than the Libvi
 
 Example with Libvirt networks (original VM definition file):
 ```
+...
     <interface type=network>
       <mac address='52:54:00:fd:d9:3a'/>
       <source network='cloud-admin'/>
       <model type='virtio'/>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x03' function='0x0'/>
     </interface>
+...
 ```
 
 Example with Linux bridges (secondary multi lab machine VM definition file):
 ```
+...
     <interface type=bridge>
       <mac address='52:54:00:fd:d9:3a'/>
       <source bridge='cloud-admin'/>
       <model type='virtio'/>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x03' function='0x0'/>
     </interface>
+...
 ```
 
 The VLANs and Linux bridges attached to them that are used for these cross lab machine virtual networks can be created with YaST or can be automatically created using the lab environment installation framework.
@@ -120,9 +124,9 @@ The files in the individual virtual machine directory should include at least th
 Example Virtual Machine Directory Structure:
 ```
 /home/VMs/<COURSE_ID>/<NAME_OF_VM>/
-                    |-<NAME_OF_VM>.xml
-                    |-<NAME_OF_VM>-multi_lm.xml
-                    |-<NAME_OF_VM>-disk01.qcow2 
+                                  |-<NAME_OF_VM>.xml
+                                  |-<NAME_OF_VM>-multi_lm.xml
+                                  |-<NAME_OF_VM>-disk01.qcow2 
 ```
 If you use Virt-Manager to create the new VM, it is easiest to manually create the VM directory and the disk image files in the directory first and then specify the disk image file during the installation. How to do this will be covered below.
 
@@ -140,7 +144,7 @@ After creating the VM’s XML definition file, you need to edit the file and rem
 
 Virtual machine disks should be of format QCOW2 when at all possible. The size of the disks should be as small as possible to meet the requirements of the course. (This helps keep the overall size of the student media smaller).
 
-The disk image files should reside in the VM’s directory (**/home/VMs/****_COURSE_ID_****/****_NAME_OF_VM_****/**). It is important to note that if you are creating the VM using Virt-Manager, there is no option to create the images here.  You must first manually create the disk image in that directory using the **qemu-img** command and then, in Virt-Manager, select it as an existing disk image when creating the VM.
+The disk image files should reside in the VM’s directory (**/home/VMs/<COURSE_ID>/<NAME_OF_VM>/**). It is important to note that if you are creating the VM using Virt-Manager, there is no option to create the images here.  You must first manually create the disk image in that directory using the **qemu-img** command and then, in Virt-Manager, select it as an existing disk image when creating the VM.
 
 Example **qemu-img** command: 
 ```
@@ -206,12 +210,19 @@ backup_lab_env.sh <course_id> [<archive_format>]
 By default VM archives are created using p7zip with the compression format of LZMA2. This can be overridden at the command line using the <archive_format>. The supported archive formats are:
 
 **7zma2** 		- p7zip with LZMA2 compression split into 2G files (default)
+
 **7z** 		- p7zip with LZMA compression split into 2G files
+
 **7zcopy** 	- p7zip with no compression split into 2G files
+
 **tar** 		- tar archive with no compression and not split
+
 **tgz** 		- gzip compressed tar archive and not split
+
 **tbz** 		- bzip2 compressed tar archive and not split
+
 **txz** 		- xz compressed tar archive and not split
+
 
 The p7zip formats are **strongly recommended** because they split the archive into smaller chunks that can reside on a FAT filesystem that is used by default when creating student media flash drives.
 
@@ -251,12 +262,19 @@ create-vm-archives.sh [<archive_format>]
 By default VM archives are created using p7zip with the compression format of LZMA2. This can be overridden at the command line using the <archive_format>. The supported archive formats are:
 
 **7zma2** 		- p7zip with LZMA2 compression split into 2G files
+
 **7z** 		- p7zip with LZMA compression split into 2G files
+
 **7zcopy** 	- p7zip with no compression split into 2G files
+
 **tar** 		- tar archive with no compression and not split
+
 **tgz** 		- gzip compressed tar archive and not split
+
 **tbz** 		- bzip2 compressed tar archive and not split
+
 **txz** 		- xz compressed tar archive and not split
+
 
 ### change-vm-disk-path.sh
 
