@@ -43,10 +43,10 @@ For things like SUSECon sessions, because you can’t really know what the other
 The Libvirt virtual network definition XML file should be provided as part of the student media. This XML file can be created using the following command:
 
 ```
-virsh net-dumpxml _NETWORK_NAME_ > _NETWORK_NAME_.xml
+virsh net-dumpxml <NETWORK_NAME> > <NETWORK_NAME>.xml
 ```
 
-The name of the file should be the name of the **_NETWORK_NAME_****.xml** where **_NETWORK_NAME_** = the name of the virtual network (i.e. cloud-admin).
+The name of the file should be the name of the **<NETWORK_NAME>.xml** where **<NETWORK_NAME>** = the name of the virtual network (i.e. cloud-admin).
 
 The following is an example of one of these network definition XML files:
 
