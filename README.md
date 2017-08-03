@@ -393,6 +393,27 @@ reset-lab-machine.sh
 
 This script creates bootable student media flash drives from a lab machine image ISO and course student media directories. Multiple Live ISO image can be specified and multiple source student media directories (or other files/directories) can be specified.
 
-There is a document named [GUIDE-Student_Flash_Drive_Creation](https://s3-us-west-2.amazonaws.com/lab-machine-image/GUIDE-Student_Flash_Drive_Creation.pdf) that describes how to use this command in greater detail.
+The following are the steps you follow to create a bootable student media flash drive:
+1. Install standard lab image to disk or boot into live lab image
+2. If the lab image was installed to disk, copy the lab image live ISO to your home directory 
+**_Note_**: If you booted into the live lab image, the lab image live ISO can be found here: 
+**/isofrom/**
+(Look for the file that ends in .iso)
+
+3. If the lab image was installed to disk, create the directory: **~/student_media**
+Copy the student media files into: **~/student_media**
+**_Note_**: If you booted into the live lab image from a flash drive that already contains the student media, that student media will be located in the same directory as the live image ISO.
+The student media files include the directory(s) named with a course number, the directories named utilities and videos (if they exist) and the README files.
+It is easier if you can copy these files to another directory as is described above.
+
+4. Open a terminal window 
+5. Plug a blank flash drive into the machine
+6. Determine the block device that corresponds to the flash drive
+7. Run the **create-live-useb.sh** command to create a student flash drive
+
+**Usage**:
+```
+sudo create-live-usb.sh  <block device>  <path to live ISO>  <path to student media>
+```
 
 
