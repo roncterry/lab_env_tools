@@ -393,6 +393,6 @@ reset-lab-machine.sh
 
 This script creates bootable student media flash drives from a lab machine image ISO and course student media directories. Multiple Live ISO image can be specified and multiple source student media directories (or other files/directories) can be specified.
 
-There is a document named **GUIDE-Student_Flash_Drive_Creation** that describes how to use this command in greater detail.
+There is a document named [GUIDE-Student_Flash_Drive_Creation](https://s3-us-west-2.amazonaws.com/lab-machine-image/GUIDE-Student_Flash_Drive_Creation.pdf) that describes how to use this command in greater detail.
 
 
