@@ -6,14 +6,15 @@ This guide describes the lab environment standards used by the SUSE Training org
 
 The usernames and passwords that exist in the lab VMs are at the discretion of the course developer based on the requirements for the courses. However, it is strongly recommended that the following two accounts exist in the VMs using the usernames and passwords provided (through the use of ‘geeko’ is starting to be discouraged).
 
-**Root account:**
-Username=root
-Password=linux
+Username | Password
+---------|----------
+root | linux
 
 **Regular user account:**
-Username=geeko
-Password=linux
-UID=1000
+Username | Password | UID
+---------|----------|----------
+geeko | linux | 1000
+
 
 # Networking
 
@@ -21,13 +22,13 @@ UID=1000
 
 The configuration of the networking in a lab environment is left to the discretion of the course developer based on the requirements for the course. It is strongly recommended that commonly used private subnets (i.e. 192.168.1.0/24, 10.0.0.0/24, etc.) be avoided. It is also recommended that the default Libvirt network (named default with a subnet of 192.168.100.0/24) be avoided. The name of the virtual network should be something that is descriptively relative to the course. 
 
-(Example: The **admin** network in the OpenStack cloud course could be named **cloud-admin**)
+(*Example*: The **admin** network in the OpenStack cloud course could be named **cloud-admin**)
 
 ## Virtual Bridge Names
 
 Because it is possible that multiple lab environments can installed on a single lab machine at a time, there is a possibility of naming collisions between the virtual networks. It is strongly recommended that the network XML definition be edited so that the virtual bridge created by Libvirt, when the network is created, be named using a more descriptive name. The recommendation is to use the name of the virtual network as the name of the bridge.
 
-**Example**: 
+**_Example_**: 
 ```
 <name>**cloud-admin**</name>
 ...
@@ -50,10 +51,10 @@ The name of the file should be the name of the **<NETWORK_NAME>.xml** where **<N
 
 The following is an example of one of these network definition XML files:
 
-**File name**: **cloud-admin.xml**
+**_File name_**: **cloud-admin.xml**
 
 ```
-<network>**
+<network>
   <name>cloud-admin</name>
   <forward mode='nat'>
     <nat>
@@ -173,19 +174,24 @@ All cloud images related to a course should reside in a single directory named: 
 
 _**Example**_: **/home/images/<COURSE_ID>/my-cloud-image.qcow2** 
 
+
+
+
 # Lab Environment Related Tools
 
 ## Lab Machine Image
 
 A standard lab machine image based on openSUSE is provided for developing and running lab environments. This lab machine image auto logs in as a regular user named **tux** and is preconfigured for Libvirt/KVM, VirtualBox and Docker VMs/containers to be run as a regular user. It also has a number of other extras preconfigured such as additional GNOME Shell extensions and additional scripts for lab machine, lab environment and VM management. GNOME is the default desktop environment but XFCE is installed and configured to look similar to the GNOME environment.
 
-The is a document named **README-Live_Image_Options** that covers how to install and use the Lab Machine Image in greater detail.
+A page contianing the URLs where the Lab machine Image(s) can be downloaded and videos demonstrating the installation of a lab machine and a lab environment onto a labe machine can be found here: https://s3-us-west-2.amazonaws.com/lab-machine-image/files.html
+ 
+There is a document named [README-Live_Image_Options](https://s3-us-west-2.amazonaws.com/lab-machine-image/README-Live_Image_Options.pdf) that covers how to install and use the Lab Machine Image in greater detail.
 
 ## Lab Environment Installer Framework
 
 There is a lab environment installer framework that can be used to create installer packages for lab environments. These installer packages make installing, and equally important, removing lab environments much easier. Using the Installer Framework also allows for lab environments to be compartmentalized theoretically enabling multiple lab environments to be installed simultaneously and have them not step on each other.
 
-There is a document named **GUIDE-Lab_Environment_Installer_Framework** that covers how to use the Lab Environment Installer Framework in greater detail.
+There is a document named [Lab_Environment_Installer_Framework - README.md](https://github.com/roncterry/install_lab_env/(README.md) that covers how to use the Lab Environment Installer Framework in greater detail.
 
 ## Scripts
 
