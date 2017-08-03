@@ -33,10 +33,10 @@ Because it is possible that multiple lab environments can installed on a single 
 
 **_Example_**: 
 ```
-<name>**cloud-admin**</name>
+<name>cloud-admin</name>
 ...
   <ip address=’192.168.124.1’, netmask=’255.255.255.0’> 
-  <bridge name=’**cloud-admin**‘ … />
+  <bridge name=’cloud-admin‘ … />
 ...
 ```
 
