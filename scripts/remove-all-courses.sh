@@ -1,12 +1,13 @@
 #!/bin/bash
 #
-# version: 20161113.001
+# version: 20170919.001
 
 ###############################################################################
 #                global vars
 ###############################################################################
 
-if [ -z ${1} ]then
+if [ -z ${1} ]
+then
   LAB_USER=tux
 else
   if grep -q ${1} /etc/passwd
@@ -17,7 +18,8 @@ else
   fi
 fi
 
-if [ -z ${2} ]then
+if [ -z ${2} ]
+then
   COURSE_INSTALLER_DIR=/install/courses
 else
   if [ -e ${2} ]
