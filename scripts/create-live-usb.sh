@@ -1,6 +1,6 @@
 #!/bin/bash
-# version: 1.1.0
-# date: 2017-05-23
+# version: 1.1.1
+# date: 2017-09-25
 
 ##############################################################################
 #                           Global Variables
@@ -618,8 +618,8 @@ main() {
   echo -e "${LTPURPLE}Partitions: ${GRAY}${PART_COUNT}${NC}"
   case ${PART_COUNT} in
     2)
-      echo "${LTPURPLE}1st size:   ${GRAY}${PART1_SIZE}${NC}"
-      echo "${LTPURPLE}2nd fstype: ${GRAY}${PART2_FSTYPE}${NC}"
+      echo -e "${LTPURPLE}1st size:   ${GRAY}${PART1_SIZE}${NC}"
+      echo -e "${LTPURPLE}2nd fstype: ${GRAY}${PART2_FSTYPE}${NC}"
     ;;
   esac
   print_iso_list
