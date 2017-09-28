@@ -1,6 +1,6 @@
 #!/bin/bash
-# version: 1.1.1
-# date: 2017-09-25
+# version: 1.1.2
+# date: 2017-09-27
 
 ##############################################################################
 #                           Global Variables
@@ -298,7 +298,7 @@ create_multiple_partitions() {
       echo -e "${LTBLUE}==============================================================${NC}"
       echo
       echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.ntfs -Q ${DISK_DEV}2${NC}"
-      mkfs.ntfs -Q ${DISK_DEV}2
+      mkfs.ntfs -L ${LABEL2} -Q ${DISK_DEV}2
     ;;
     vfat|fat32|FAT32)
       echo
@@ -307,7 +307,7 @@ create_multiple_partitions() {
       echo -e "${LTBLUE}==============================================================${NC}"
       echo
       echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.vfat ${DISK_DEV}2${NC}"
-      mkfs.vfat ${DISK_DEV}2
+      mkfs.vfat -n ${LABEL2} ${DISK_DEV}2
     ;;
     ext4|EXT4)
       echo
@@ -316,7 +316,7 @@ create_multiple_partitions() {
       echo -e "${LTBLUE}==============================================================${NC}"
       echo
       echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.ext4 ${DISK_DEV}2${NC}"
-      mkfs.ext4 ${DISK_DEV}2
+      mkfs.ext4 -L ${LABEL2} ${DISK_DEV}2
     ;;
     xfs|XFS)
       echo
@@ -325,7 +325,7 @@ create_multiple_partitions() {
       echo -e "${LTBLUE}==============================================================${NC}"
       echo
       echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.xfs -f ${DISK_DEV}2${NC}"
-      mkfs.xfs -f ${DISK_DEV}2
+      mkfs.xfs -f -L ${LABEL2} ${DISK_DEV}2
     ;;
   esac
 }
@@ -603,6 +603,13 @@ main() {
     LABEL=LIVE_USB
   fi
  
+  if echo $* | grep -q "label2="
+  then
+    LABEL2=$(echo $* | grep -o "label2=.*" | cut -d ' '  -f 1 | cut -d = -f 2)
+  else
+    LABEL2=LIVE_USB_HOME
+  fi
+ 
   check_for_root
   check_for_usb_disk
   check_for_live_iso
@@ -620,6 +627,7 @@ main() {
     2)
       echo -e "${LTPURPLE}1st size:   ${GRAY}${PART1_SIZE}${NC}"
       echo -e "${LTPURPLE}2nd fstype: ${GRAY}${PART2_FSTYPE}${NC}"
+      echo -e "${LTPURPLE}2nd Label:  ${GRAY}${LABEL2}${NC}"
     ;;
   esac
   print_iso_list
