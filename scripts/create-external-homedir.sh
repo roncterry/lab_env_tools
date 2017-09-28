@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# version: 0.2.2
+# version: 0.2.3
 # date: 2017-09-28
 
 #############################################################################
@@ -81,7 +81,7 @@ check_for_home_dev() {
 format_home_dev() {
   echo
   echo "Creating new filesystem on ${HOME_DIR_DEV} ..."
-  mkfs.ext4 -L LIVE_USB_HOME ${HOME_DIR_DEV}
+  mkfs.ext4 -L LIVE_HOME ${HOME_DIR_DEV}
   echo
   echo "Copying current /home/* to new home device ..."
   mount ${HOME_DIR_DEV} /mnt

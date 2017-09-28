@@ -1,5 +1,5 @@
 #!/bin/bash
-# version: 1.1.2
+# version: 1.1.3
 # date: 2017-09-27
 
 ##############################################################################
@@ -607,7 +607,7 @@ main() {
   then
     LABEL2=$(echo $* | grep -o "label2=.*" | cut -d ' '  -f 1 | cut -d = -f 2)
   else
-    LABEL2=LIVE_USB_HOME
+    LABEL2=LIVE_HOME
   fi
  
   check_for_root

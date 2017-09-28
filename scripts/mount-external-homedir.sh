@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# version: 0.2.3
+# version: 0.2.4
 # date: 2016-09-28
 
 #############################################################################
@@ -44,9 +44,9 @@ check_for_root () {
 check_for_home_label() {
   if [ -z ${HOME_DIR_DEV} ]
   then
-    if [ -e /dev/disk/by-label/LIVE_USB_HOME ]
+    if [ -e /dev/disk/by-label/LIVE_HOME ]
     then
-      HOME_DIR_DEV="/dev/disk/by-label/LIVE_USB_HOME"
+      HOME_DIR_DEV="/dev/disk/by-label/LIVE_HOME"
     else
       echo
       echo "ERROR: You must supply the device file for the home directory device."
