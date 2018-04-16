@@ -1,6 +1,6 @@
 #!/bin/bash
-# version: 1.1.3
-# date: 2017-09-27
+# version: 2.2.0
+# date: 2018-04-16
 
 ##############################################################################
 #                           Global Variables
@@ -85,6 +85,12 @@ usage() {
   echo "                 The volume label you want to add to the first parition"
   echo "                 created on the flash drive."
   echo "                 DEFAULT=LIVE_USB"
+  echo
+  echo "Note:  For this command to function, one of the following must be installed:"
+  echo "         live-grub-stick (preferred) "
+  echo "         live-fat-stick"
+  echo
+  echo "       If they are not currenly installed, please install them before proceeding."
   echo
 }
 
@@ -185,7 +191,7 @@ check_for_live_iso() {
       if ! [ -e ${ISO_IMAGE} ]
       then
         echo
-        echo -e "${LTPURPLE}ISO Image:i ${GRAY}${ISO_IMAGE}${NC}"
+        echo -e "${LTPURPLE}ISO Image: ${GRAY}${ISO_IMAGE}${NC}"
         echo -e "${LTRED}ERROR: The provided live ISO does not seem to exist.${NC}"
         echo
         exit
@@ -298,7 +304,7 @@ create_multiple_partitions() {
       echo -e "${LTBLUE}==============================================================${NC}"
       echo
       echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.ntfs -Q ${DISK_DEV}2${NC}"
-      mkfs.ntfs -L ${LABEL2} -Q ${DISK_DEV}2
+      mkfs.ntfs -F -L ${LABEL2} -Q ${DISK_DEV}2
     ;;
     vfat|fat32|FAT32)
       echo
@@ -316,7 +322,7 @@ create_multiple_partitions() {
       echo -e "${LTBLUE}==============================================================${NC}"
       echo
       echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.ext4 ${DISK_DEV}2${NC}"
-      mkfs.ext4 -L ${LABEL2} ${DISK_DEV}2
+      mkfs.ext4 -F -L ${LABEL2} ${DISK_DEV}2
     ;;
     xfs|XFS)
       echo
@@ -359,7 +365,7 @@ create_live_usb_syslinux() {
       *)
         echo 
         echo -e "${LTCYAN}Copying ${TYPE} image to USB drive ...${NC}"
-        echo -e "${LTCYAN}------------------------------------------------------------${NC}"
+        echo -e "${LTCYAN}---------------------------------------------------------------------${NC}"
         echo
         echo -e "${LTGREEN}COMMAND:${GRAY} live-fat-stick --${TYPE} ${ISO_IMAGE} ${DISK_DEV}1${NC}"
         echo
@@ -380,7 +386,7 @@ create_live_usb_grub() {
   echo -e "${LTBLUE}==============================================================${NC}"
   echo
 
-  COUNT=1
+  local COUNT=1
   for ISO in ${ISO_LIST}
   do
     if echo ${ISO} | grep -q ":"
@@ -397,12 +403,12 @@ create_live_usb_grub() {
         case ${COUNT} in
           1)
             echo
-            echo -e "(Clonzilla not support as the first ISO image.  Skipping ...)"
+            echo -e "(Clonzilla not supported as the first ISO image.  Skipping ...)"
           ;;
           *)
             echo 
             echo -e "${LTCYAN}Copying ${TYPE} image to USB drive ...${NC}"
-            echo -e "${LTCYAN}------------------------------------------------------------${NC}"
+            echo -e "${LTCYAN}---------------------------------------------------------------------${NC}"
             echo
             echo -e "${LTCYAN}Mounting ${DISK_DEV}1 on /mnt/${RAND}${NC}"
             echo -e "${LTGREEN}COMMAND:${GRAY} mkdir -p /mnt/${RAND}${NC}"
@@ -430,10 +436,10 @@ create_live_usb_grub() {
   
             echo 
             echo -e "${LTCYAN}Mounting ${DISK_DEV}1 on /mnt/${RAND}${NC}"
-            echo -e "${LTGREEN}COMMAND:${GRAY} umount ${DISK_DEV}1${NC}"
+            echo -e "${LTGREEN}  COMMAND:${GRAY} umount ${DISK_DEV}1${NC}"
             umount ${DISK_DEV}1
 
-            echo -e "${LTGREEN}COMMAND:${GRAY} rm -rf /mnt/${RAND}${NC}"
+            echo -e "${LTGREEN}  COMMAND:${GRAY} rm -rf /mnt/${RAND}${NC}"
             rm -rf /mnt/${RAND}
             echo 
           ;;
@@ -442,13 +448,24 @@ create_live_usb_grub() {
       suse)
         echo
         echo -e "${LTCYAN}Copying ${TYPE} image to USB drive ...${NC}"
-        echo -e "${LTCYAN}------------------------------------------------------------${NC}"
+        echo -e "${LTCYAN}---------------------------------------------------------------------${NC}"
         echo
         echo -e "${LTGREEN}COMMAND:${GRAY} live-grub-stick --${TYPE} ${ISO_IMAGE} ${DISK_DEV}1${NC}"
         echo
         echo y | live-grub-stick --${TYPE} ${ISO_IMAGE} ${DISK_DEV}1
         echo
+        local INSTALL_ISO_IMAGE="$(echo ${ISO_IMAGE} | cut -d \. -f 1)-install.iso"
+        if [ -e ${INSTALL_ISO_IMAGE} ]
+        then
+          echo -e "${LTCYAN}Copying ${TYPE} install image to USB drive ...${NC}"
+          echo -e "${LTCYAN}---------------------------------------------------------------------${NC}"
+          echo -e "${LTGREEN}COMMAND:${GRAY} live-grub-stick --${TYPE} ${INSTALL_ISO_IMAGE} ${DISK_DEV}1${NC}"
+          echo
+          echo y | live-grub-stick --${TYPE} ${INSTALL_ISO_IMAGE} ${DISK_DEV}1
+          echo
+        fi
 
+        echo -e "${LTCYAN}-Mounting Live ISO image ...${NC}"
         echo -e "${LTGREEN}COMMAND:${GRAY} mkdir /tmp/isomount-${RAND}${NC}"
         mkdir -p /tmp/isomount-${RAND}
 
@@ -458,44 +475,54 @@ create_live_usb_grub() {
 
         if $(file $(ls /tmp/isomount-${RAND}/*read-only*) | grep -q "Squashfs filesystem") > /dev/null
         then
-          echo -e "${LTCYAN}Copying grub2 files from squashfs image to USB drive ...${NC}"
-          echo -e "${LTCYAN}------------------------------------------------------------${NC}"
+          echo -e "${LTCYAN}Copying grub2 files from squashfs image to USB drive partition 1 ...${NC}"
+          echo -e "${LTCYAN}---------------------------------------------------------------------${NC}"
 
-          echo -e "${LTGREEN}COMMAND:${GRAY} mkdir -p /tmp/usbmount-${RAND}${NC}"
+          echo -e "${LTCYAN}-Mounting ${LABEL} partition of USB drive ...${NC}"
+          echo -e "${LTGREEN}  COMMAND:${GRAY} mkdir -p /tmp/usbmount-${RAND}${NC}"
           mkdir -p /tmp/usbmount-${RAND}
 
-          echo -e "${LTGREEN}COMMAND:${GRAY} mount ${DISK_DEV}1 /tmp/usbmount-${RAND}${NC}"
+          echo -e "${LTGREEN}  COMMAND:${GRAY} mount ${DISK_DEV}1 /tmp/usbmount-${RAND}${NC}"
           mount ${DISK_DEV}1 /tmp/usbmount-${RAND}
+          echo
 
-          echo -e "${LTGREEN}COMMAND:${GRAY} mkdir -p /tmp/squashmount-${RAND}${NC}"
+          echo -e "${LTCYAN}-Mounting squashfs image in Live ISO ...${NC}"
+          echo -e "${LTGREEN}  COMMAND:${GRAY} mkdir -p /tmp/squashmount-${RAND}${NC}"
           mkdir -p /tmp/squashmount-${RAND}
 
-          echo -e "${LTGREEN}COMMAND:${GRAY} mount -o loop -t squashfs $(ls /tmp/isomount-${RAND}/*read-only*) /tmp/squashmount-${RAND}${NC}"
+          echo -e "${LTGREEN}  COMMAND:${GRAY} mount -o loop -t squashfs $(ls /tmp/isomount-${RAND}/*read-only*) /tmp/squashmount-${RAND}${NC}"
           mount -o loop -t squashfs $(ls /tmp/isomount-${RAND}/*read-only*) /tmp/squashmount-${RAND}
+          echo
 
-          echo -e "${LTGREEN}COMMAND:${GRAY} cp -a /tmp/squashmount-${RAND}/boot/grub2/* /tmp/usbmount-${RAND}/boot/grub2/${NC}"
+          echo -e "${LTCYAN}-Copying grub2 files to USB drive ...${NC}"
+          echo -e "${LTGREEN}  COMMAND:${GRAY} cp -a /tmp/squashmount-${RAND}/boot/grub2/* /tmp/usbmount-${RAND}/boot/grub2/${NC}"
           cp -a /tmp/squashmount-${RAND}/boot/grub2/* /tmp/usbmount-${RAND}/boot/grub2/
+          echo
 
-          echo -e "${LTGREEN}COMMAND:${GRAY} umount /tmp/squashmount-${RAND}${NC}"
+          echo -e "${LTCYAN}-Unmounting squashfs image in Live ISO ...${NC}"
+          echo -e "${LTGREEN}  COMMAND:${GRAY} umount /tmp/squashmount-${RAND}${NC}"
           umount /tmp/squashmount-${RAND}
 
-          echo -e "${LTGREEN}COMMAND:${GRAY} rm -rf /tmp/squashmount-${RAND}${NC}"
+          echo -e "${LTGREEN}  COMMAND:${GRAY} rm -rf /tmp/squashmount-${RAND}${NC}"
           rm -rf /tmp/squashmount-${RAND}
+          echo
 
-          echo -e "${LTGREEN}COMMAND:${GRAY} umount /tmp/usbmount-${RAND}${NC}"
+          echo -e "${LTCYAN}-Unmounting ${LABEL} partition of USB drive ...${NC}"
+          echo -e "${LTGREEN}  COMMAND:${GRAY} umount /tmp/usbmount-${RAND}${NC}"
           umount /tmp/usbmount-${RAND}
 
-          echo -e "${LTGREEN}COMMAND:${GRAY} rm -rf /tmp/usbmount-${RAND}${NC}"
+          echo -e "${LTGREEN}  COMMAND:${GRAY} rm -rf /tmp/usbmount-${RAND}${NC}"
           rm -rf /tmp/usbmount-${RAND}
 
-          echo -e "${LTCYAN}------------------------------------------------------------${NC}"
+          echo -e "${LTCYAN}---------------------------------------------------------------------${NC}"
           echo
         fi
 
-        echo -e "${LTGREEN}COMMAND:${GRAY} umount /tmp/isomount-${RAND}${NC}"
+        echo -e "${LTCYAN}-Unmounting Live ISO image ...${NC}"
+        echo -e "${LTGREEN}  COMMAND:${GRAY} umount /tmp/isomount-${RAND}${NC}"
         umount /tmp/isomount-${RAND}
 
-        echo -e "${LTGREEN}COMMAND:${GRAY} rm -rf /tmp/isomount-${RAND}${NC}"
+        echo -e "${LTGREEN}  COMMAND:${GRAY} rm -rf /tmp/isomount-${RAND}${NC}"
         rm -rf /tmp/isomount-${RAND}
 
         echo
@@ -503,7 +530,7 @@ create_live_usb_grub() {
       *)
         echo
         echo -e "${LTCYAN}Copying ${TYPE} image to USB drive ...${NC}"
-        echo -e "${LTCYAN}------------------------------------------------------------${NC}"
+        echo -e "${LTCYAN}---------------------------------------------------------------------${NC}"
         echo
         echo -e "${LTGREEN}COMMAND:${GRAY} live-grub-stick --${TYPE} ${ISO_IMAGE} ${DISK_DEV}1${NC}"
         echo
@@ -513,6 +540,125 @@ create_live_usb_grub() {
       esac
     ((COUNT++))
   done
+  COUNT=
+}
+
+copy_homedir_files_to_usb() {
+  local RAND=$(date +%s)
+
+  local COUNT=1
+  for ISO in ${ISO_LIST}
+  do
+    if echo ${ISO} | grep -q ":"
+    then
+      local TYPE=$(echo ${ISO} | cut -d : -f 1)
+      local ISO_IMAGE=$(echo ${ISO} | cut -d : -f 2)
+    else
+      local TYPE=suse
+      local ISO_IMAGE=${ISO}
+    fi
+
+    case ${TYPE} in
+      clonezilla)
+        echo
+        echo -e "(Copying home dir filss from Clonzilla not supported.  Skipping ...)"
+        echo
+      ;;
+      suse)
+        case ${PART_COUNT} in
+          2)
+            echo
+            echo -e "${LTCYAN}Copying home dir files to ${LABEL2} partition of USB drive ...${NC}"
+            echo -e "${LTCYAN}---------------------------------------------------------------------${NC}"
+   
+            #--- mount home dir partition
+            echo -e "${LTCYAN}-Mounting ${LABEL2} partition of USB drive ...${NC}"
+            echo -e "${LTGREEN}  COMMAND:${GRAY} mkdir /tmp/homemount-${RAND}${NC}"
+            mkdir -p /tmp/homemount-${RAND}
+   
+            echo -e "${LTGREEN}COMMAND:${GRAY} mount /dev/disk/by-label/${LABEL2} /tmp/homemount-${RAND}${NC}"
+            mount /dev/disk/by-label/${LABEL2} /tmp/homemount-${RAND}
+            echo
+   
+            #--- mount usb partition 1
+            echo -e "${LTCYAN}-Mounting ${LABEL} partition of USB drive ...${NC}"
+            echo -e "${LTGREEN}  COMMAND:${GRAY} mkdir -p /tmp/usbmount-${RAND}${NC}"
+            mkdir -p /tmp/usbmount-${RAND}
+   
+            echo -e "${LTGREEN}COMMAND:${GRAY} mount ${DISK_DEV}1 /tmp/usbmount-${RAND}${NC}"
+            mount ${DISK_DEV}1 /tmp/usbmount-${RAND}
+            echo
+   
+            #--- mount live iso
+            echo -e "${LTCYAN}-Mounting Live ISO image ...${NC}"
+            echo -e "${LTGREEN}  COMMAND:${GRAY} mkdir /tmp/isomount-${RAND}${NC}"
+            mkdir -p /tmp/isomount-${RAND}
+   
+            echo -e "${LTGREEN}  COMMAND:${GRAY} mount -o loop ${ISO_IMAGE} /tmp/isomount-${RAND}${NC}"
+            mount -o loop ${ISO_IMAGE} /tmp/isomount-${RAND}
+            echo
+   
+            #--- mount squashfs on live iso
+            echo -e "${LTCYAN}-Mounting squashfs image in the Live ISO ...${NC}"
+            echo -e "${LTGREEN}  COMMAND:${GRAY} mkdir -p /tmp/squashmount-${RAND}${NC}"
+            mkdir -p /tmp/squashmount-${RAND}
+   
+            echo -e "${LTGREEN}  COMMAND:${GRAY} mount -o loop -t squashfs $(ls /tmp/isomount-${RAND}/*read-only*) /tmp/squashmount-${RAND}${NC}"
+            mount -o loop -t squashfs $(ls /tmp/isomount-${RAND}/*read-only*) /tmp/squashmount-${RAND}
+            echo
+ 
+            #--- copy home dir files
+            echo -e "${LTCYAN}-Copying home directory files to ${LABEL2} parition ...${NC}"
+            echo -e "${LTGREEN}  COMMAND:${GRAY} cp -a /tmp/squashmount-${RAND}/home/* /tmp/homemount-${RAND}/${NC}"
+            cp -a /tmp/squashmount-${RAND}/home/* /tmp/homemount-${RAND}/
+
+            echo -e "${LTGREEN}  COMMAND:${GRAY} rm -rf /tmp/homemount-${RAND}/lost+found${NC}"
+            rm -rf /tmp/homemount-${RAND}/lost+found
+            echo
+   
+            #--- unmount squashfs on live iso
+            echo -e "${LTCYAN}-Unmounting squashfs image ...${NC}"
+            echo -e "${LTGREEN}  COMMAND:${GRAY} umount /tmp/squashmount-${RAND}${NC}"
+            umount /tmp/squashmount-${RAND}
+   
+            echo -e "${LTGREEN}  COMMAND:${GRAY} rm -rf /tmp/squashmount-${RAND}${NC}"
+            rm -rf /tmp/squashmount-${RAND}
+            echo
+   
+            #--- unmount live iso
+            echo -e "${LTCYAN}-Unmounting Live ISO image ...${NC}"
+            echo -e "${LTGREEN}  COMMAND:${GRAY} umount /tmp/isomount-${RAND}${NC}"
+            umount /tmp/isomount-${RAND}
+   
+            echo -e "${LTGREEN}  COMMAND:${GRAY} rm -rf /tmp/isomount-${RAND}${NC}"
+            rm -rf /tmp/isomount-${RAND}
+   
+            #--- unmount usb partition 1
+            echo -e "${LTCYAN}-Unmounting ${LABEL} partition of USB drive ...${NC}"
+            echo -e "${LTGREEN}  COMMAND:${GRAY} umount /tmp/usbmount-${RAND}${NC}"
+            umount /tmp/usbmount-${RAND}
+   
+            echo -e "${LTGREEN}  COMMAND:${GRAY} rm -rf /tmp/usbmount-${RAND}${NC}"
+            rm -rf /tmp/usbmount-${RAND}
+            echo
+   
+            #--- unmount home dir partition
+            echo -e "${LTCYAN}-Unmounting ${LABEL2} partition of USB drive ...${NC}"
+            echo -e "${LTGREEN}  COMMAND:${GRAY} umount /tmp/homemount-${RAND}${NC}"
+            umount /tmp/homemount-${RAND}
+   
+            echo -e "${LTGREEN}  COMMAND:${GRAY} rm -rf /tmp/homemount-${RAND}${NC}"
+            rm -rf /tmp/homemount-${RAND}
+   
+            echo -e "${LTCYAN}---------------------------------------------------------------------${NC}"
+            echo
+          ;;
+        esac
+      ;;
+    esac
+    ((COUNT++))
+  done
+  COUNT=
 }
 
 copy_files_to_usb() {
@@ -529,7 +675,7 @@ copy_files_to_usb() {
     then
       echo
       echo -e "${LTCYAN}Copying files to USB ...${NC}"
-      echo -e "${LTCYAN}-------------------------------------------${NC}"
+      echo -e "${LTCYAN}----------------------------------------------------${NC}"
       echo
       echo -e "${LTGREEN}COMMAND:${GRAY} mkdir -p /mnt/${RAND}${NC}"
       mkdir -p /mnt/${RAND}
@@ -558,15 +704,27 @@ copy_files_to_usb() {
 }
 
 print_iso_list() {
-  local ISO_LIST=$(echo ${LIVE_ISO} | sed 's/,/ /g')
+  ISO_LIST=$(echo ${LIVE_ISO} | sed 's/,/ /g')
 
   local COUNT=0
 
   for ISO in ${ISO_LIST}
   do
-    echo -e "${LTPURPLE}Live ISO ${COUNT}: ${GRAY}${ISO}${NC}"
+    local INSTALL_ISO_IMAGE="$(echo ${ISO_IMAGE} | cut -d \. -f 1)-install.iso"
+    if [ -e ${ISTALL_ISO_IMAGE} ]
+    then
+      echo -e "${LTPURPLE}Live ISO ${COUNT}: ${GRAY}${ISO}*${NC}"
+      INSTALL_ISO_IMAGE_PRESENT=Y
+    else
+      echo -e "${LTPURPLE}Live ISO ${COUNT}: ${GRAY}${ISO}${NC}"
+    fi
     ((COUNT++))
   done
+  case ${INSTALL_ISO_IMAGE_PRESENT} in
+    Y)
+      echo -e "* Install ISO also available"
+    ;;
+  esac
 }
 
 print_files_source_list() {
@@ -595,6 +753,29 @@ main() {
       MODE=syslinux
     fi
   fi
+
+  case ${MODE} in
+    grub)
+      if ! which live-grub-stick > /dev/null
+      then
+        echo
+        echo -e "${LTRED}ERROR: The program live-grub-stick cannot be found.${NC}"
+        echo -e "${LTRED}       Please install it and rerun the command.${NC}"
+        echo
+        exit 1
+      fi
+    ;;
+    syslinux)
+      if ! which live-fat-stick > /dev/null
+      then
+        echo
+        echo -e "${LTRED}ERROR: The program live-fat-stick cannot be found.${NC}"
+        echo -e "${LTRED}       Please install it and rerun the command.${NC}"
+        echo
+        exit 1
+      fi
+    ;;
+  esac
  
   if echo $* | grep -q "label="
   then
@@ -662,6 +843,7 @@ main() {
         ;;
       esac
       copy_files_to_usb
+      copy_homedir_files_to_usb
       echo
       echo -e "${LTCYAN}#####################################################################${NC}"
       echo -e "${LTCYAN}                              Finished${NC}"
