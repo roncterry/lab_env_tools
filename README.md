@@ -291,6 +291,35 @@ change-vm-disk-path.sh <course_vm_directory> <new_vm_directory_path>
 
 For example, if I have a course named SOC101, according to the standards laid out previously, all of the VMs for that course should exist in a **/home/VMs/SOC101/** directory. Each of the VMs should be in their own directory (i.e. **/home/VMs/SOC101/SOC101-admin/**, **/home/VMs/SOC101/SOC101-controller01**, etc.) and those VM directories should contain the disk image for that MV as well as a Libvirt XML VM definition file. The VM definition files should be named the same as the VM directory (i.e. **/home/VMs/SOC101/SOC101-admin/SOC101-admin.xml**, etc.). This script updates the path for the disk images in these VM definition files.
 
+### host-sshfs-dirs.sh 
+
+**Intro**:
+
+This script uses sshfs to mount the standard course related directories from the host machine inot a VM running on the host..
+
+Usage:
+```
+host-sshfs.dirs.sh mount|umount|list
+```
+**Detailed Description**:
+
+This script uses sshfs to mount the following directories on the host onto the same directories inside a VM running on the host:
+
+*/home/VMs
+/home/iso
+/home/images
+/home/tux/scripts
+/home/tux/course_files
+/home/tux/pdf*
+
+The idea is that you can run a VM for use as the "management workstation" and in the VM you will have access to all of the files that were installed onto the host machine as part of the lab environment.
+
+The command **host-sshfs-dirs.sh mount** must be run each time you reboot the VM as the mounts are not persistent.
+
+The command **host-sshfs-dirs.sh umount** will manually unmount the directories mounted with the mount option.
+
+The command **host-sshfs-dirs.sh list** will display a list of directories currently mounted by the **host-sshfs-dirs.sh** command.
+
 ### reset-vm-disk-image.sh 
 
 **Intro**:
