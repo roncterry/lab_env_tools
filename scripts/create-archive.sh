@@ -1,8 +1,11 @@
 #!/bin/bash
+#
+# version: 1.1.0
+# date: 20180521
 
 usage() {
   echo
-  echo "USAGE: $0 <directory> <archive_format>"
+  echo "USAGE: $0 <directory>[,<directory>,...] [<archive_format>]"
   echo
   echo "  Archive Formats:"
   echo "    7z        -7zip with LZMA compression split into 2G files"
@@ -55,8 +58,7 @@ in
   ;;
 esac
 
-#for DIR in $(echo ${1} | sed `s/,/ /g`)
-for DIR in ${1}
+for DIR in $(echo ${1} | tr , \ )
 do
   echo "---------------------------------------------------------------------"
   if [ -e ${DIR} ]
