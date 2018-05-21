@@ -277,6 +277,31 @@ Archive Format | Description
 **txz** | xz compressed tar archive and not split
 
 
+### create-archive.sh
+
+**Intro**:
+
+This scripts create an archive of a specified directory.. This should be run from the directory that contains the directory that you want to archive. 
+
+**Usage**:
+```
+create-archive.sh <directory_to_archive>  [<archive_format>] 
+```
+**Detailed Description**:
+
+By default VM archives are created using p7zip with the compression format of LZMA2. This can be overridden at the command line using the **<archive_format>**. The supported archive formats are:
+
+Archive Format | Description
+------------ | -------------
+**7zma2** | p7zip with LZMA2 compression split into 2G files
+**7z** | p7zip with LZMA compression split into 2G files
+**7zcopy** | p7zip with no compression split into 2G files
+**tar** | tar archive with no compression and not split
+**tgz** | gzip compressed tar archive and not split
+**tbz** | bzip2 compressed tar archive and not split
+**txz** | xz compressed tar archive and not split
+
+
 ### change-vm-disk-path.sh
 
 **Intro**:
