@@ -281,11 +281,11 @@ Archive Format | Description
 
 **Intro**:
 
-This scripts create an archive of a specified directory.. This should be run from the directory that contains the directory that you want to archive. 
+This scripts create an archive of a specified directory or archives of a comma delimited list of soecified directories (one archive per directory in the list).. A file containing md5sums of the files corresponding to the archive will also be created. This should be run from the directory that contains the directories that you want to archive. 
 
 **Usage**:
 ```
-create-archive.sh <directory_to_archive>  [<archive_format>] 
+create-archive.sh <directory>[,<directory>,...] [<archive_format>] 
 ```
 **Detailed Description**:
 
