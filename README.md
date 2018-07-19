@@ -252,19 +252,22 @@ Once this directory structure is created, simply running the command:
 ```
 will create a usable installer package in the **/install/courses/** directory.
 
-### create-vm-archives.sh
+
+### create-archive.sh
 
 **Intro**:
 
-This scripts create archives of all VM directories inside a course directory. This should be run from inside the course VM directory (i.e. **/home/VMs/SOC101/** for a course named SOC101). 
+This scripts create an archive of a specified directory or archives of a comma delimited list of specified directories (one archive per directory in the list). A file containing md5sums of the files corresponding to the archive(s) will also be created (one md5sums file per archive). This should be run from the parent directory that contains the directories that you want to archive. 
+
+This can be particularly useful if you need to create a new archive for a VM that was just updated and insert that VM’s archive file(s) into an already existing installer package without having to rebuild the entire installer package.
 
 **Usage**:
 ```
-create-vm-archives.sh [<archive_format>] 
+create-archive.sh <directory>[,<directory>,...] [<archive_format>] 
 ```
 **Detailed Description**:
 
-By default VM archives are created using p7zip with the compression format of LZMA2. This can be overridden at the command line using the **<archive_format>**. The supported archive formats are:
+By default archives are created using p7zip with the compression format of LZMA2. This can be overridden at the command line using the **<archive_format>**. The supported archive formats are:
 
 Archive Format | Description
 ------------ | -------------
@@ -277,15 +280,15 @@ Archive Format | Description
 **txz** | xz compressed tar archive and not split
 
 
-### create-archive.sh
+### create-vm-archives.sh
 
 **Intro**:
 
-This scripts create an archive of a specified directory or archives of a comma delimited list of soecified directories (one archive per directory in the list).. A file containing md5sums of the files corresponding to the archive will also be created. This should be run from the directory that contains the directories that you want to archive. 
+This scripts create archives of all VM directories inside a course directory. This should be run from inside the course VM directory (i.e. **/home/VMs/SOC101/** for a course named SOC101). 
 
 **Usage**:
 ```
-create-archive.sh <directory>[,<directory>,...] [<archive_format>] 
+create-vm-archives.sh [<archive_format>] 
 ```
 **Detailed Description**:
 
@@ -316,6 +319,7 @@ change-vm-disk-path.sh <course_vm_directory> <new_vm_directory_path>
 
 For example, if I have a course named SOC101, according to the standards laid out previously, all of the VMs for that course should exist in a **/home/VMs/SOC101/** directory. Each of the VMs should be in their own directory (i.e. **/home/VMs/SOC101/SOC101-admin/**, **/home/VMs/SOC101/SOC101-controller01**, etc.) and those VM directories should contain the disk image for that MV as well as a Libvirt XML VM definition file. The VM definition files should be named the same as the VM directory (i.e. **/home/VMs/SOC101/SOC101-admin/SOC101-admin.xml**, etc.). This script updates the path for the disk images in these VM definition files.
 
+
 ### host-sshfs-dirs.sh 
 
 **Intro**:
@@ -345,6 +349,7 @@ The command **host-sshfs-dirs.sh umount** will manually unmount the directories 
 
 The command **host-sshfs-dirs.sh list** will display a list of directories currently mounted by the **host-sshfs-dirs.sh** command.
 
+
 ### reset-vm-disk-image.sh 
 
 **Intro**:
@@ -359,6 +364,7 @@ reset-vm-disk-image.sh <vm_dir>
 
 **WARNING** - This can be dangerous. It was designed to quickly reset empty VMs so that they can be reinstalled.
 
+
 ### backup-homedirs.sh
 
 **Info**:
@@ -371,6 +377,8 @@ It is particularly useful to run this command right after a machine has been ins
 ```
 backup-homedirs.sh [<username> [<username> …]]*
 ```
+
+
 ### restore-homedirs.sh
 
 **Info**:
@@ -383,6 +391,8 @@ It is particularly useful to run this command right after a machine has been use
 ```
 restore-homedirs.sh [<username> [<username> …]]
 ```
+
+
 ### remove-all-vnets.sh 
 
 **Info**:
@@ -393,6 +403,8 @@ This script removes **all** Libvirt virtual networks that have been defined. Thi
 ```
 remove-all-vnets.sh
 ```
+
+
 ### remove-all-vms.sh 
 
 **Info**:
@@ -403,6 +415,8 @@ This script removes **all** Libvirt virtual machines that have been defined. Thi
 ```
 remove-all-vms.sh
 ```
+
+
 ### cleanup-libvirt.sh 
 
 **Info**:
@@ -413,6 +427,8 @@ This script removes **all** Libvirt virtual machines and virtual networks that h
 ```
 cleanup-libvirt.sh
 ```
+
+
 ### remove-all-courses.sh 
 
 **Info**:
@@ -423,6 +439,8 @@ This script attempts to remove all courses that are currently installed that wer
 ```
 remove-all-courses.sh
 ```
+
+
 ### reset-lab-machine.sh
 
 **Info**:
@@ -441,6 +459,8 @@ It should clean off all installed courses as well as any Libvirt VMs and Libvirt
 ```
 reset-lab-machine.sh
 ```
+
+
 ### create-live-usb.sh 
 
 **Info**:
