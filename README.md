@@ -492,4 +492,8 @@ It is easier if you can copy these files to another directory as is described ab
 sudo create-live-usb.sh  <block device>  <path to live ISO>  <path to student media>
 ```
 
+# Video Guides
+[Back Up a Lab Environment](https://s3-us-west-2.amazonaws.com/training-howtos/backup_a_lab_environment.mp4)
+
+[Create a Live USB](https://s3-us-west-2.amazonaws.com/training-howtos/create_a_live_usb.mp4)
 
