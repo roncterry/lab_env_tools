@@ -480,7 +480,7 @@ Look for the file that ends in .iso
 4. Copy the student media files into: **~/student_media**
 
 **_Note_**: If you booted into the live lab image from a flash drive that already contains the student media (i.e. the lab envionment installer and possibly other files), that student media will be located in the same directory as the live image ISO.
-The student media files include the directory(s) named with a course number (i.e. the lab environment installer), the directories named utilities and videos (if they exist) and the README files.
+The student media files include the directory(s) named with a course number (i.e. the lab environment installer), the directories named *utilities* and *videos* (if they exist) and the README files.
 It is easier if you can copy these files to another directory as is described above even if the student medial consists of only the lab environment installer (i.e. the directory named with the course ID).
 
 5. Open a terminal window 
