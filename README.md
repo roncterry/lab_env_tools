@@ -4,7 +4,7 @@ This guide describes the lab environment standards used by the SUSE Training org
 
 # Usernames and Passwords
 
-The usernames and passwords that exist in the lab VMs are at the discretion of the course developer based on the requirements for the courses. However, it is strongly recommended that the following two accounts exist in the VMs using the usernames and passwords provided (through the use of ‘geeko’ is starting to be discouraged).
+The usernames and passwords that exist in the lab VMs are at the discretion of the course developer based on the requirements for the courses. However, it is strongly recommended that the following two accounts exist in the VMs using the usernames and passwords provided (though the use of ‘geeko’ is starting to be discouraged).
 
 **root user account:**
 
@@ -40,7 +40,7 @@ Because it is possible that multiple lab environments can installed on a single 
 ...
 ```
 
-For things like SUSECon sessions, because you can’t really know what the other sessions’ virtual networks are, it is suggested that you use a naming convention that includes your session ID (Example: **virbr-HO77572**). In the case where your session requires multiple networks, append the network number to the session ID separated by a **_** (Example: **virbr-HO77572_1** for the first network, **virbr-HO77572_2** for the second network, etc.).
+For things like SUSECON sessions, because you can’t really know what the other sessions’ virtual networks are, it is suggested that you use a naming convention that includes your session ID (Example: **virbr-HO77572**). In the case where your session requires multiple networks, append the network number to the session ID separated by a **_** (Example: **virbr-HO77572_1** for the first network, **virbr-HO77572_2** for the second network, etc.).
 
 ## Network Definition XML File
 
@@ -163,7 +163,7 @@ If your virtual machines require ISO images or if you want to provide ISO images
 
 All ISO images related to a course should reside in a single directory named: **/home/iso/<COURSE_ID>** 
 
-_**Example**_: **/home/iso/<COURSE_ID>/my-iso.iso**
+*Example*: **/home/iso/<COURSE_ID>/my-iso.iso**
 
 Or, if the ISO image will only be used by a single VM, the ISO image can reside in the VM’s directory (see Virtual Machine Directory above).
 
@@ -175,7 +175,7 @@ If your lab environment requires cloud images to be used or if you want to provi
 
 All cloud images related to a course should reside in a single directory named: **/home/images/<COURSE_ID>** 
 
-_**Example**_: **/home/images/<COURSE_ID>/my-cloud-image.qcow2** 
+*Example*: **/home/images/<COURSE_ID>/my-cloud-image.qcow2** 
 
 
 
