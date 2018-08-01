@@ -468,19 +468,20 @@ reset-lab-machine.sh
 This script creates bootable student media flash drives from a lab machine image ISO and course student media directories. Multiple Live ISO image can be specified and multiple source student media directories (or other files/directories) can be specified.
 
 The following are the steps you follow to create a bootable student media flash drive:
+
 1. Install standard lab image to disk or boot into live lab image
 2. If the lab image was installed to disk, copy the lab image live ISO to your home directory 
 
 **_Note_**: If you booted into the live lab image, the lab image live ISO can be found here: 
-**/isofrom/**
-(Look for the file that ends in .iso)
+**/isofrom/** (for version 5.x of the lab machine image) or **/run/initramfs/isoscan/** (for version 6.x of the lab machine image).
+Look for the file that ends in .iso
 
 3. If the lab image was installed to disk, create the directory: **~/student_media**
 4. Copy the student media files into: **~/student_media**
 
-**_Note_**: If you booted into the live lab image from a flash drive that already contains the student media, that student media will be located in the same directory as the live image ISO.
-The student media files include the directory(s) named with a course number, the directories named utilities and videos (if they exist) and the README files.
-It is easier if you can copy these files to another directory as is described above.
+**_Note_**: If you booted into the live lab image from a flash drive that already contains the student media (i.e. the lab envionment installer and possibly other files), that student media will be located in the same directory as the live image ISO.
+The student media files include the directory(s) named with a course number (i.e. the lab environment installer), the directories named utilities and videos (if they exist) and the README files.
+It is easier if you can copy these files to another directory as is described above even if the student medial consists of only the lab environment installer (i.e. the directory named with the course ID).
 
 5. Open a terminal window 
 6. Plug a blank flash drive into the machine
@@ -488,8 +489,15 @@ It is easier if you can copy these files to another directory as is described ab
 8. Run the **create-live-useb.sh** command to create a student flash drive
 
 **Usage**:
+
+Create a live USB with student media (lab environment installer):
 ```
-sudo create-live-usb.sh  <block device>  <path to live ISO>  <path to student media>
+sudo create-live-usb.sh  <block_device>  <path_to_live_ISO>  <path_to_student_media>
+```
+
+Create a live USB without student media (lab environment installer):
+```
+sudo create-live-usb.sh  <block_device>  <path_to_live_ISO>
 ```
 
 # Video Guides
