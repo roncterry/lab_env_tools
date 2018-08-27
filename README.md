@@ -365,6 +365,23 @@ reset-vm-disk-image.sh <vm_dir>
 **WARNING** - This can be dangerous. It was designed to quickly reset empty VMs so that they can be reinstalled.
 
 
+### sparsify-vm-disks.sh 
+
+**Intro**:
+
+This script uses the virt-sparsify command to sparsify all of the disks for a VM. You must run this script from within a VM's directory (where the VM's disk image reside). It first renames the original disk image file and then created a sparse copy of that disk using the disk image file's original file name.
+
+**WARNING** - You must have enough space on the host systems filesystem to hold the full size of the VM's disk while it is being sparsified. (It operates on only one of the VM's disks at a time so you don't have to have enough free space for all fo the VM's disk at once).
+
+Usage:
+```
+sparsify-vm-disks.sh 
+```
+**Detailed Description**:
+
+**WARNING** - This can be dangerous. It was designed to quickly reset empty VMs so that they can be reinstalled.
+
+
 ### backup-homedirs.sh
 
 **Info**:
