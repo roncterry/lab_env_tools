@@ -1,6 +1,6 @@
 #!/bin/bash
-# version: 1.2.0
-# date: 2018-03-30
+# version: 1.3.4
+# date: 2018-07-28
 
 ##############################################################################
 #                           Global Variables
@@ -53,12 +53,23 @@ fi
 
 if [ -z ${ISO_MOUNT} ]
 then
-  ISO_MOUNT="/livecd"
+  if [ -d /livecd ]
+  then
+    ISO_MOUNT="/livecd"
+  elif [ -d /run/initramfs/live/LiveOS ]
+  then
+    ISO_MOUNT="/run/initramfs/live/LiveOS"
+  fi
 fi
 
 if [ -z ${SQUASH_MOUNT} ]
 then
   SQUASH_MOUNT="/tmp/squash_mount"
+fi
+
+if [ -z ${SQUASH_ROOT_IMAHE_MOUNT} ]
+then
+  SQUASH_ROOT_IMAGE_MOUNT="/tmp/squash_root_image_mount"
 fi
 
 if [ -z ${ROOT_MOUNT} ]
@@ -125,6 +136,16 @@ remove_partitions() {
     do
       echo -e "${LTGREEN}COMMAND:${GRAY} umount ${DISK_DEV}p${i}${NC}"
       umount ${DISK_DEV}p${i}
+      echo -e "${LTGREEN}COMMAND:${GRAY} parted -s ${DISK_DEV} rm ${i}${NC}"
+      parted -s ${DISK_DEV} rm ${i}
+    done
+    echo
+  elif echo ${DISK_DEV} | grep -q "/dev/mapper"
+  then
+    for i in $(seq 1 ${NUM_PARTS})
+    do
+      echo -e "${LTGREEN}COMMAND:${GRAY} umount ${DISK_DEV}-part${i}${NC}"
+      umount ${DISK_DEV}-part${i}
       echo -e "${LTGREEN}COMMAND:${GRAY} parted -s ${DISK_DEV} rm ${i}${NC}"
       parted -s ${DISK_DEV} rm ${i}
     done
@@ -228,6 +249,11 @@ create_single_partition_with_swap() {
     echo -e "${LTGREEN}COMMAND:${GRAY} mkswap ${DISK_DEV}p${SWAP_PART_NUM}${NC}"
     mkswap ${DISK_DEV}p${SWAP_PART_NUM}
     SWAP_PART=${DISK_DEV}p${SWAP_PART_NUM}
+  elif echo ${DISK_DEV} | grep -q "/dev/mapper"
+  then
+    echo -e "${LTGREEN}COMMAND:${GRAY} mkswap ${DISK_DEV}-part${SWAP_PART_NUM}${NC}"
+    mkswap ${DISK_DEV}-part${SWAP_PART_NUM}
+    SWAP_PART=${DISK_DEV}-part${SWAP_PART_NUM}
   else
     echo -e "${LTGREEN}COMMAND:${GRAY} mkswap ${DISK_DEV}${SWAP_PART_NUM}${NC}"
     mkswap ${DISK_DEV}${SWAP_PART_NUM}
@@ -244,6 +270,11 @@ create_single_partition_with_swap() {
     echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.ext4 -F -L ROOT ${DISK_DEV}p${ROOT_PART_NUM}${NC}"
     mkfs.ext4 -F -L ROOT ${DISK_DEV}p${ROOT_PART_NUM}
     ROOT_PART=${DISK_DEV}p${ROOT_PART_NUM}
+  elif echo ${DISK_DEV} | grep -q "/dev/mapper"
+  then
+    echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.ext4 -F -L ROOT ${DISK_DEV}-part${ROOT_PART_NUM}${NC}"
+    mkfs.ext4 -F -L ROOT ${DISK_DEV}-part${ROOT_PART_NUM}
+    ROOT_PART=${DISK_DEV}-part${ROOT_PART_NUM}
   else
     echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.ext4 -F -L ROOT ${DISK_DEV}${ROOT_PART_NUM}${NC}"
     mkfs.ext4 -F -L ROOT ${DISK_DEV}${ROOT_PART_NUM}
@@ -350,6 +381,11 @@ create_two_partitions_with_swap() {
     echo -e "${LTGREEN}COMMAND:${GRAY} mkswap ${DISK_DEV}p${SWAP_PART_NUM}${NC}"
     mkswap ${DISK_DEV}p${SWAP_PART_NUM}
     SWAP_PART=${DISK_DEV}p${SWAP_PART_NUM}
+  elif echo ${DISK_DEV} | grep -q "/dev/mapper"
+  then
+    echo -e "${LTGREEN}COMMAND:${GRAY} mkswap ${DISK_DEV}-part${SWAP_PART_NUM}${NC}"
+    mkswap ${DISK_DEV}-part${SWAP_PART_NUM}
+    SWAP_PART=${DISK_DEV}-part${SWAP_PART_NUM}
   else
     echo -e "${LTGREEN}COMMAND:${GRAY} mkswap ${DISK_DEV}${SWAP_PART_NUM}${NC}"
     mkswap ${DISK_DEV}${SWAP_PART_NUM}
@@ -366,6 +402,11 @@ create_two_partitions_with_swap() {
     echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.ext4 -F -L ROOT ${DISK_DEV}p${ROOT_PART_NUM}${NC}"
     mkfs.ext4 -F -L ROOT ${DISK_DEV}p${ROOT_PART_NUM}
     ROOT_PART=${DISK_DEV}p${ROOT_PART_NUM}
+  elif echo ${DISK_DEV} | grep -q "/dev/mapper"
+  then
+    echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.ext4 -F -L ROOT ${DISK_DEV}-part${ROOT_PART_NUM}${NC}"
+    mkfs.ext4 -F -L ROOT ${DISK_DEV}-part${ROOT_PART_NUM}
+    ROOT_PART=${DISK_DEV}-part${ROOT_PART_NUM}
   else
     echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.ext4 -F -L ROOT ${DISK_DEV}${ROOT_PART_NUM}${NC}"
     mkfs.ext4 -F -L ROOT ${DISK_DEV}${ROOT_PART_NUM}
@@ -382,6 +423,11 @@ create_two_partitions_with_swap() {
     echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.ext4 -F -L HOME ${DISK_DEV}p${HOME_PART_NUM}${NC}"
     mkfs.ext4 -F -L ROOT ${DISK_DEV}p${HOME_PART_NUM}
     HOME_PART=${DISK_DEV}p${HOME_PART_NUM}
+  elif echo ${DISK_DEV} | grep -q "/dev/mapper"
+  then
+    echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.ext4 -F -L HOME ${DISK_DEV}-part${HOME_PART_NUM}${NC}"
+    mkfs.ext4 -F -L ROOT ${DISK_DEV}-part${HOME_PART_NUM}
+    HOME_PART=${DISK_DEV}-part${HOME_PART_NUM}
   else
     echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.ext4 -F -L HOME ${DISK_DEV}${HOME_PART_NUM}${NC}"
     mkfs.ext4 -F -L ROOT ${DISK_DEV}${HOME_PART_NUM}
@@ -400,11 +446,21 @@ copy_live_filesystem_to_disk() {
 
   for FILE_ON_ISO in $(ls ${ISO_MOUNT})
   do
-    if file ${ISO_MOUNT}/${FILE_ON_ISO} | grep -q "Squashfs filesystem"
+    if [ -d ${ISO_MOUNT}/LiveOS ]
     then
-      SQUASH_IMAGE=${ISO_MOUNT}/${FILE_ON_ISO}
+      if file ${ISO_MOUNT}/LiveOS/${FILE_ON_ISO} | grep -q "Squashfs filesystem"
+      then
+        SQUASH_IMAGE=${ISO_MOUNT}/LiveOS/${FILE_ON_ISO}
+      fi
+    else
+      if file ${ISO_MOUNT}/${FILE_ON_ISO} | grep -q "Squashfs filesystem"
+      then
+        SQUASH_IMAGE=${ISO_MOUNT}/${FILE_ON_ISO}
+      fi
     fi
   done
+
+  echo -e "${LTPURPLE}  SQUASH_IMAGE=${GRAY}${SQUASH_IMAGE}${NC}"
 
   if ! [ -z ${SQUASH_IMAGE} ]
   then
@@ -414,6 +470,28 @@ copy_live_filesystem_to_disk() {
     echo -e "${LTGREEN}  COMMAND:${GRAY} mount ${SQUASH_IMAGE} ${SQUASH_MOUNT}${NC}"
     mount ${SQUASH_IMAGE} ${SQUASH_MOUNT}
     echo
+    if [ -e ${SQUASH_MOUNT}/LiveOS/rootfs.img ]
+    then
+      SQUASH_ROOT_IMAGE=${SQUASH_MOUNT}/LiveOS/rootfs.img
+      echo -e "${LTPURPLE}  SQUASH_ROOT_IMAGE=${GRAY}${SQUASH_ROOT_IMAGE}${NC}"
+
+      #for FILE_IN_SQUASH_IMAGE in $(ls ${SQUASH_MOUNT}/LiveOS)
+      #do
+      #  echo FILE_IN_SQUASH_IMAGE=${FILE_IN_SQUASH_IMAGE};read
+      #  if file ${SQUASH_MOUNT}/LiveOS/${FILE_IN_SQUASH_IMAGE} | grep -q "Squashfs filesystem"
+      #  then
+      #    SQUASH_ROOT_IMAGE=${SQUASH_MOUNT}/LiveOS/${FILE_IN_SQUASH_IMAGE}
+      #    echo SQUASH_ROOT_IMAGE=${SQUASH_ROOT_IMAGE};read
+      #  fi
+      #done
+
+      echo -e "${LTCYAN}  -Mounting Root Image in Squashfs ...${NC}"
+      echo -e "${LTGREEN}  COMMAND:${GRAY} mkdir ${SQUASH_ROOT_IMAGE_MOUNT}${NC}"
+      mkdir ${SQUASH_ROOT_IMAGE_MOUNT}
+      echo -e "${LTGREEN}  COMMAND:${GRAY} mount ${SQUASH_ROOT_IMAGE} ${SQUASH_ROOT_IMAGE_MOUNT}${NC}"
+      mount ${SQUASH_ROOT_IMAGE} ${SQUASH_ROOT_IMAGE_MOUNT}
+      echo
+    fi
 
     echo -e "${LTCYAN}  -Mounting Root Partition ...${NC}"
     echo -e "${LTGREEN}  COMMAND:${GRAY} mkdir ${ROOT_MOUNT}${NC}"
@@ -434,11 +512,26 @@ copy_live_filesystem_to_disk() {
     echo -e "${LTCYAN}  -Copying filesystem to root partition (this may take a while) ...${NC}"
     #echo -e "${LTGREEN}  COMMAND:${GRAY} rsync -ah --progress ${SQUASH_MOUNT}/* ${ROOT_MOUNT}/${NC}"
     #rsync -ah --progress ${SQUASH_MOUNT}/* ${ROOT_MOUNT}/
-    echo -e "${LTGREEN}  COMMAND:${GRAY} cp -a ${SQUASH_MOUNT}/* ${ROOT_MOUNT}/${NC}"
-    cp -a ${SQUASH_MOUNT}/* ${ROOT_MOUNT}/
+    if [ -z ${SQUASH_ROOT_IMAGE} ]
+    then
+      echo -e "${LTGREEN}  COMMAND:${GRAY} cp -a ${SQUASH_MOUNT}/* ${ROOT_MOUNT}/${NC}"
+      cp -a ${SQUASH_MOUNT}/* ${ROOT_MOUNT}/
+    else
+      echo -e "${LTGREEN}  COMMAND:${GRAY} cp -a ${SQUASH_ROOT_IMAGE_MOUNT}/* ${ROOT_MOUNT}/${NC}"
+      cp -a ${SQUASH_ROOT_IMAGE_MOUNT}/* ${ROOT_MOUNT}/
+    fi
     echo
 
     echo -e "${LTCYAN}  -Updating /etc/fstab ...${NC}"
+
+    if echo ${DISK_DEV} | grep -q "/dev/mapper"
+    then
+      local ORIGINAL_ROOT_PART=${ROOT_PART}
+      local ORIGINAL_SWAP_PART=${SWAP_PART}
+      local ROOT_PART=$(ls -l /dev/mapper/ | grep "$(basename ${ORIGINAL_ROOT_PART})" | cut -d \> -f 2 | sed 's+^ ..+/dev+')
+      local SWAP_PART=$(ls -l /dev/mapper/ | grep "$(basename ${ORIGINAL_SWAP_PART})" | cut -d \> -f 2 | sed 's+^ ..+/dev+')
+    fi
+
     SWAP_UUID=$(ls -l /dev/disk/by-uuid | grep $(basename ${SWAP_PART}) | awk '{ print $9 }')
     echo -e "${LTPURPLE}   SWAP: ${GRAY}UUID=${SWAP_UUID}  /  swap  defaults  0 0${NC}" 
     echo "UUID=${SWAP_UUID}  /  swap  defaults  0 0" > ${ROOT_MOUNT}/etc/fstab
@@ -447,11 +540,28 @@ copy_live_filesystem_to_disk() {
     echo -e "${LTPURPLE}   ROOT: ${GRAY}UUID=${ROOT_UUID}  /  ext4  acl,user_xattr  1 1${NC}"
     echo "UUID=${ROOT_UUID}  /  ext4  acl,user_xattr  1 1" >> ${ROOT_MOUNT}/etc/fstab
 
+    if echo ${DISK_DEV} | grep -q "/dev/mapper"
+    then
+      local ROOT_PART=${ORIGINAL_ROOT_PART}
+      local SWAP_PART=${ORIGINAL_SWAP_PART}
+    fi
+
     case ${CREATE_HOME_PART} in
       Y)
+        if echo ${DISK_DEV} | grep -q "/dev/mapper"
+        then
+          local ORIGINAL_HOME_PART=${HOME_PART}
+          local HOME_PART=$(ls -l /dev/mapper/ | grep "$(basename ${ORIGINAL_HOME_PART})" | cut -d \> -f 2 | sed 's+^ ..+/dev+')
+        fi
+
         HOME_UUID=$(ls -l /dev/disk/by-uuid | grep $(basename ${HOME_PART}) | awk '{ print $9 }')
         echo "LABEL=${HOME_UUID}  /  ext4  acl,user_xattr  0 0" >> ${ROOT_MOUNT}/etc/fstab
         echo -e "${LTPURPLE}   HOME: ${GRAY}UUID=${HOME_UUID}  /  ext4  acl,user_xattr  0 0${NC}"
+
+        if echo ${DISK_DEV} | grep -q "/dev/mapper"
+        then
+          local HOME_PART=${ORIGINAL_HOME_PART}
+        fi
       ;;
     esac
     echo
@@ -465,12 +575,28 @@ copy_live_filesystem_to_disk() {
       ;;
     esac
 
-    echo -e "${LTCYAN}  -Unmounting Squashfs ...${NC}"
-    echo -e "${LTGREEN}  COMMAND:${GRAY} umount ${SQUASH_IMAGE}${NC}"
-    umount ${SQUASH_IMAGE}
-    echo -e "${LTGREEN}  COMMAND:${GRAY} rmdir ${SQUASH_MOUNT}${NC}"
-    rmdir ${SQUASH_MOUNT}
-    echo
+    if ! [ -z ${SQUASH_ROOT_IMAGE} ]
+    then
+      echo -e "${LTCYAN}  -Unmounting Root Image in Squashfs ...${NC}"
+      echo -e "${LTGREEN}  COMMAND:${GRAY} umount ${SQUASH_ROOT_IMAGE}${NC}"
+      umount ${SQUASH_ROOT_IMAGE_MOUNT}
+      echo -e "${LTGREEN}  COMMAND:${GRAY} rmdir ${SQUASH_ROOT_IMAGE_MOUNT}${NC}"
+      rmdir ${SQUASH_ROOT_IMAGE_MOUNT}
+      echo
+      echo -e "${LTCYAN}  -Unmounting Squashfs ...${NC}"
+      echo -e "${LTGREEN}  COMMAND:${GRAY} umount ${SQUASH_IMAGE}${NC}"
+      umount ${SQUASH_IMAGE}
+      echo -e "${LTGREEN}  COMMAND:${GRAY} rmdir ${SQUASH_MOUNT}${NC}"
+      rmdir ${SQUASH_MOUNT}
+      echo
+    else
+      echo -e "${LTCYAN}  -Unmounting Squashfs ...${NC}"
+      echo -e "${LTGREEN}  COMMAND:${GRAY} umount ${SQUASH_IMAGE}${NC}"
+      umount ${SQUASH_IMAGE}
+      echo -e "${LTGREEN}  COMMAND:${GRAY} rmdir ${SQUASH_MOUNT}${NC}"
+      rmdir ${SQUASH_MOUNT}
+      echo
+    fi
 
   else
     echo
@@ -505,6 +631,14 @@ install_grub() {
     local ROOT_PART=${DISK_DEV}p${ROOT_PART_NUM}
     local SWAP_PART=${DISK_DEV}p${SWAP_PART_NUM}
     local HOME_PART=${DISK_DEV}p${HOME_PART_NUM}
+  elif echo ${DISK_DEV} | grep -q "/dev/mapper"
+  then
+    local MAPPER_ROOT_PART=${DISK_DEV}-part${ROOT_PART_NUM}
+    local MAPPER_SWAP_PART=${DISK_DEV}-part${SWAP_PART_NUM}
+    local MAPPER_HOME_PART=${DISK_DEV}-part${HOME_PART_NUM}
+    local ROOT_PART=$(ls -l /dev/mapper/ | grep "${DISK_DEV}-part${ROOT_PART_NUM}" | cut -d \> -f 2 | sed 's+^ ..+/dev+')
+    local SWAP_PART=$(ls -l /dev/mapper/ | grep "${DISK_DEV}-part${SWAP_PART_NUM}" | cut -d \> -f 2 | sed 's+^ ..+/dev+')
+    local HOME_PART=$(ls -l /dev/mapper/ | grep "${DISK_DEV}-part${HOME_PART_NUM}" | cut -d \> -f 2 | sed 's+^ ..+/dev+')
   else
     local ROOT_PART=${DISK_DEV}${ROOT_PART_NUM}
     local SWAP_PART=${DISK_DEV}${SWAP_PART_NUM}
@@ -564,14 +698,14 @@ install_grub() {
 
   echo
   echo -e "${LTCYAN}-Unmounting Root Partition ...${NC}"
-  echo -e "${LTGREEN}COMMAND:${GRAY} umount ${ROOT_MOUNT}/proc${NC}"
-  umount ${ROOT_MOUNT}/proc
+  echo -e "${LTGREEN}COMMAND:${GRAY} umount -R ${ROOT_MOUNT}/proc${NC}"
+  umount -R ${ROOT_MOUNT}/proc
   sleep 2
-  echo -e "${LTGREEN}COMMAND:${GRAY} umount ${ROOT_MOUNT}/dev${NC}"
-  umount ${ROOT_MOUNT}/dev
+  echo -e "${LTGREEN}COMMAND:${GRAY} umount -R ${ROOT_MOUNT}/dev${NC}"
+  umount -R ${ROOT_MOUNT}/dev
   sleep 2
-  echo -e "${LTGREEN}COMMAND:${GRAY} umount ${ROOT_MOUNT}/sys${NC}"
-  umount ${ROOT_MOUNT/sys}
+  echo -e "${LTGREEN}COMMAND:${GRAY} umount -R ${ROOT_MOUNT}/sys${NC}"
+  umount -R ${ROOT_MOUNT/sys}
   sleep 2
   echo -e "${LTGREEN}COMMAND:${GRAY} umount -R ${ROOT_MOUNT}${NC}"
   umount -R ${ROOT_MOUNT}
@@ -611,12 +745,25 @@ main() {
 
   case ${2} in
     with_home)
-      IMAGE="$(ls /isofrom/*.iso | head -n 1)"
+      if [ -d /isofrom ]
+      then
+        IMAGE="$(ls /isofrom/*.iso | head -n 1)"
+      elif [ -d /run/initramfs/isoscan ]
+      then
+        IMAGE="$(ls /run/initramfs/isoscan/*.iso | head -n 1)"
+      fi
+      #echo -e "${LTRED}IMAGE=${IMAGE}${NC}"
     ;;
     *)
       if [ -z ${2} ]
       then
-        IMAGE="$(ls /isofrom/*.iso | head -n 1)"
+        if [ -d /isofrom ]
+        then
+          IMAGE="$(ls /isofrom/*.iso | head -n 1)"
+        elif [ -d /run/initramfs/isoscan ]
+        then
+          IMAGE="$(ls /run/initramfs/isoscan/*.iso | head -n 1)"
+        fi
       else
         if [ -e ${2} ]
         then
@@ -628,6 +775,7 @@ main() {
           exit 1
         fi
       fi
+      #echo -e "${LTRED}IMAGE=${IMAGE}${NC}"
     ;;
   esac
 
