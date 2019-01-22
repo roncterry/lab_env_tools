@@ -130,7 +130,9 @@ Example Virtual Machine Directory Structure:
 /home/VMs/<COURSE_ID>/<NAME_OF_VM>/
                                   |-<NAME_OF_VM>.xml
                                   |-<NAME_OF_VM>-multi_lm.xml
-                                  |-<NAME_OF_VM>-disk01.qcow2 
+                                  |-<NAME_OF_VM>-disk01.qcow2
+                                  |-<NAME_OF_VM>.pool.xml
+                                  |-<NAME_OF_VM>.vbmc 
 ```
 If you use Virt-Manager to create the new VM, it is easiest to manually create the VM directory and the disk image files in the directory first and then specify the disk image file during the installation. How to do this will be covered below.
 
@@ -154,6 +156,14 @@ Example **qemu-img** command:
 ```
 qemu-img create -f qcow2 /home/VMs/<COURSE_ID>/<NAME_OF_VM>/disk01.qcow2 20G
 ```
+
+## Virtual Machine Storage Pools (Optional)
+
+If you are using the [install_lab_env](https://github.com/roncterry/install_lab_env) framework to install your the VMs in your lab environment, and you wish to have a storage pool automatically created for the VM's directory (/home/VMs/<COURSE_ID>/<NAME_OF_VM>) when the VM is registered with Libvirt, then create a file in the VM's directory named <NAME_OF_VM>.pool.xml that contains the pool description. 
+
+## Virtual Machine Virtual BMC Devices (Optional)
+
+If you are using the [install_lab_env](https://github.com/roncterry/install_lab_env) framework to install your the VMs in your lab environment, and you wish to have virtual BMC devices created for your VM when it is registered with Libvirt, then create a file in the VM's directory named <NAME_OF_VM>.vbmc that contains the virtual BMC device description. An example of this file can be found in the [vbmcctl](https://github.com/roncterry/vbmcctl) project (vbmcctl.cfg.example). The **vbmcctl** command must be installed on the host machine for this functionality to work. 
 
 # ISO Images
 
