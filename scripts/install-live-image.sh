@@ -1,6 +1,6 @@
 #!/bin/bash
-# version: 2.0.0
-# date: 2018-08-29
+# version: 2.1.0
+# date: 2019-01-29
 
 ##############################################################################
 #                           Global Variables
@@ -92,14 +92,13 @@ BLOCK_DEV_LIST="$(fdisk -l | grep "/dev" | sed 's/Disk //g' | awk '{ print $1 }'
 
 usage() {
   echo
-  #echo "${0} <block_device> <image_file> [with_home] [force_uefi|force_bios] [no_secureboot]"
-  echo "${0} <block_device> <image_file> [force_uefi|force_bios]"
+  echo "${0} <block_device> <image_file> [with_home] [force_uefi|force_bios] [no_secureboot]"
   echo
   echo "  Options:"
-  #echo "           with_home        Create a separate parttiion for /home"
+  echo "           with_home        Create a separate parttiion for /home"
   echo "           force_uefi       Force installing for the UEFI bootloader"
   echo "           force_bios       Force installing for the BIOS bootloader"
-  #echo "           no_secureboot    Disable secure boot with the UEFI bootloader"
+  echo "           no_secureboot    Disable secure boot with the UEFI bootloader"
   echo
   echo "  Available Disks: ${BLOCK_DEV_LIST}"
   echo
@@ -114,8 +113,8 @@ usage() {
   echo "        ROOT_SIZE       -size of root partition (default: 100%)"
   echo "        ROOT2_SIZE      -size of root partition when /home is on its"
   echo "                         own partition (default: 20GiB)"
-  #echo "        HOME_SIZE       -size of /home partition if \"with_home\" is"
-  #echo "                         supplied on the command line (default: 100%)"
+  echo "        HOME_SIZE       -size of /home partition if \"with_home\" is"
+  echo "                         supplied on the command line (default: 100%)"
   echo
 }
 
@@ -140,7 +139,25 @@ check_for_install_block_device() {
   else
     if [ -e ${1} ]
     then
-      DISK_DEV=${1}
+      if which multipath > /dev/null 2>@1
+      then
+        #-- check for multipath device
+        MPIO_DEV_LIST="$(multipath -ll | grep ^[a-z,A-Z,0-9] | grep -v size | awk '{ print $1 }')"
+        for MPIO_DEV in ${MPIO_DEV_LIST}
+        do
+          if multipath -ll ${MPIO_DEV} | grep -o $(basename ${1})
+          then
+            DISK_DEV="/dev/mapper/${MPIO_DEV}"
+            ORIG_DISK_DEV="${1}"
+            break
+          fi
+        done
+        #---------------
+      fi
+      if [ -z ${DISK_DEV} ]
+      then
+        DISK_DEV=${1}
+      fi
     else
       echo
       echo -e "${LTRED}ERROR: The block device provided doesn't seem to exist. Exiting.${NC}"
@@ -1594,7 +1611,13 @@ main() {
   echo -e "${LTRED}!!!!         WARNING: ALL DATA ON DISK WILL BE LOST!         !!!!${NC}"
   echo -e "${LTRED}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!${NC}"
   echo
-  echo -e "${LTPURPLE}Disk Device:      ${GRAY}${DISK_DEV}${NC}"
+  if ! [ -z ${ORIG_DISK_DEV} ]
+  then
+	  echo -e "${LTPURPLE}Disk Device:      ${GRAY}${ORIG_DISK_DEV} ${LTPURPLE}(using MPIO Disk Device)${NC}"
+    echo -e "${LTPURPLE}MPIO Disk Device: ${GRAY}${DISK_DEV}${NC}"
+  else
+    echo -e "${LTPURPLE}Disk Device:      ${GRAY}${DISK_DEV}${NC}"
+  fi
   echo -e "${LTPURPLE}Partition Table:  ${GRAY}${PARTITION_TABLE_TYPE}${NC}"
   echo -e "${LTPURPLE}Bootloader:       ${GRAY}${BOOTLOADER}${NC}"
   echo -e "${LTPURPLE}Live Image:       ${GRAY}${IMAGE}${NC}"
