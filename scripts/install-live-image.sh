@@ -1,5 +1,5 @@
 #!/bin/bash
-# version: 2.1.0
+# version: 2.1.1
 # date: 2019-01-29
 
 ##############################################################################
@@ -139,7 +139,7 @@ check_for_install_block_device() {
   else
     if [ -e ${1} ]
     then
-      if which multipath > /dev/null 2>@1
+      if which multipath > /dev/null 2>&1
       then
         #-- check for multipath device
         MPIO_DEV_LIST="$(multipath -ll | grep ^[a-z,A-Z,0-9] | grep -v size | awk '{ print $1 }')"
