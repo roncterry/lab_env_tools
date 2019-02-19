@@ -1,6 +1,6 @@
 #!/bin/bash
-# version: 1.0.1
-# date: 2017-06-06
+# version: 1.0.2
+# date: 2019-02-19
 
 ### Colors ###
 RED='\e[0;31m'
@@ -25,8 +25,9 @@ usage() {
   echo
   echo -e "${GREEN}USAGE: ${GRAY}$0 <vm_name>${NC}"
   echo
-  echo -e "Where ${GRAY}<vm_name>${NC} is the name of a VM's directory in your current working "
-  echo -e "directory and the VM's directory has a disk image file named: ${GRAY}<vm_name>.qcow2${NC}"
+  echo -e "Where: "
+  echo -e "  ${GRAY}<vm_name>${NC} is the name of a VM's directory in your current working directory"
+  echo -e "  the VM's directory has a disk image file named: ${GRAY}<vm_name>.qcow2${NC}"
   echo
 }
 
@@ -50,6 +51,12 @@ then
   echo "${LTRED}ERROR: The config file ./${VM_NAME}/${VM_NAME}.xml doesn't appear to exist${NC}"
   echo
   exit 3
+elif ! ls ${VM_NAME}/${VM_NAME}.qcow2 > /dev/null 2>&1
+then
+  echo
+  echo "${LTRED}ERROR: The disk image file ./${VM_NAME}/${VM_NAME}.qcow2 doesn't appear to exist${NC}"
+  echo
+  exit 4
 fi
 
 DISK_SIZE=$(qemu-img info ${VM_NAME}/${VM_NAME}.qcow2 | grep "^virtual size" | awk '{ print $3 }')
