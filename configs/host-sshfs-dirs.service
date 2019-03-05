@@ -1,0 +1,16 @@
+[Unit]
+Description=Mount host lab environment directories in a VM via sshfs
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/host-sshfs-dirs.sh mount
+ExecStop=/usr/local/bin/host-sshfs-dirs.sh umount
+ExecReload=/usr/local/bin/host-sshfs-dirs.sh umount
+ExecReload=/usr/local/bin/host-sshfs-dirs.sh mount
+
+[Install]
+WantedBy=multi-user.target
+
