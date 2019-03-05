@@ -1,10 +1,30 @@
 #!/bin/bash
-# ver: 2018011601
+# ver: 2019021201
 
-DIR_LIST="/home/VMs /home/iso /home/images /home/tux/scripts /home/tux/course_files /home/tux/pdf"
-REMOTE_IP=$(ip route show | grep default | awk '{ print $3 }')
-REMOTE_USER=tux
-REMOTE_USER_PASSWD=linux
+if [ -e /etc/host-sshfs-dirs.cfg ]
+then
+  . /etc/host-sshfs-dirs.cfg
+fi
+
+if [ -z ${DIR_LIST} ]
+then
+  DIR_LIST="/home/VMs /home/iso /home/images /home/tux/scripts /home/tux/course_files /home/tux/pdf"
+fi
+
+if [ -z ${REMOTE_IP} ]
+then
+  REMOTE_IP=$(ip route show | grep default | awk '{ print $3 }')
+fi
+
+if [ -z ${REMOTE_USER} ]
+then
+  REMOTE_USER=tux
+fi
+
+if [ -z ${REMOTE_USER_PASSWD} ]
+then
+  REMOTE_USER_PASSWD=linux
+fi
 
 usage() {
   echo
