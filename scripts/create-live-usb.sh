@@ -1,6 +1,6 @@
 #!/bin/bash
-# version: 2.2.0
-# date: 2018-04-16
+# version: 2.3.0
+# date: 2018-05-07
 
 ##############################################################################
 #                           Global Variables
@@ -39,7 +39,7 @@ fi
 ##############################################################################
 
 usage() {
-  echo "Usage: $0 <disk_dev>[:<part_count>[:<part1_size][:<part2_fstype>]] [<type>:]<live_iso>[,[<type>:]<live_iso>[, ...]] [<files_source>[,<files_source>,...]] [label=<volume_label>]"
+  echo "Usage: $0 <disk_dev>[:<part_count>[:<part1_size][:<part2_fstype>]] [<type>:]<live_iso>[,[<type>:]<live_iso>[, ...]] [<files_source>[,<files_source>,...]] [label=<volume_label>] [label2=<volume_label2>]"
   echo
   echo " <disk_dev>      --REQUIRED--"
   echo "                 The device file that corresponds to the USB disk"
@@ -85,6 +85,11 @@ usage() {
   echo "                 The volume label you want to add to the first parition"
   echo "                 created on the flash drive."
   echo "                 DEFAULT=LIVE_USB"
+  echo
+  echo " <volume_label2> --OPTIONAL--"
+  echo "                 The volume label you want to add to the second parition"
+  echo "                 created on the flash drive."
+  echo "                 DEFAULT=LIVE_HOME"
   echo
   echo "Note:  For this command to function, one of the following must be installed:"
   echo "         live-grub-stick (preferred) "
@@ -472,8 +477,30 @@ create_live_usb_grub() {
         echo -e "${LTGREEN}COMMAND:${GRAY} mount -o loop ${ISO_IMAGE} /tmp/isomount-${RAND}${NC}"
         mount -o loop ${ISO_IMAGE} /tmp/isomount-${RAND}
         echo
+#echo "Press [Enter] to continue";read;echo
 
-        if $(file $(ls /tmp/isomount-${RAND}/*read-only*) | grep -q "Squashfs filesystem") > /dev/null
+        if [ -d /tmp/isomount-${RAND}/LiveOS ]
+          then
+            ISOMOUNT_SQUASHFS_DIR="LiveOS"
+            #echo "ISOMOUNT_SQUASHFS_DIR=LiveOS"
+          else
+            ISOMOUNT_SQUASHFS_DIR="*read-only*"
+            #echo "ISOMOUNT_SQUASHFS_DIR=*read-only*"
+        fi
+
+        #echo "Files in isomount-${RAND}"
+        #echo "----------------------------------------"
+        #echo "ls /tmp/isomount-${RAND}"
+        #ls /tmp/isomount-${RAND}
+        #echo "ls /tmp/isomount-${RAND}/${ISOMOUNT_SQUASHFS_DIR}"
+        #ls /tmp/isomount-${RAND}/${ISOMOUNT_SQUASHFS_DIR}
+        #echo "file /tmp/isomount-${RAND}/${ISOMOUNT_SQUASHFS_DIR}/$(ls /tmp/isomount-${RAND}/${ISOMOUNT_SQUASHFS_DIR})"
+        #file /tmp/isomount-${RAND}/${ISOMOUNT_SQUASHFS_DIR}/$(ls /tmp/isomount-${RAND}/${ISOMOUNT_SQUASHFS_DIR})
+        #file /tmp/isomount-${RAND}/${ISOMOUNT_SQUASHFS_DIR}/$(ls /tmp/isomount-${RAND}/${ISOMOUNT_SQUASHFS_DIR}) | grep -q "Squashfs filesystem"
+        #echo
+        #echo "Press [Enter] to continue";read;echo
+
+        if $(file /tmp/isomount-${RAND}/${ISOMOUNT_SQUASHFS_DIR}/$(ls /tmp/isomount-${RAND}/${ISOMOUNT_SQUASHFS_DIR}) | grep -q "Squashfs filesystem") > /dev/null
         then
           echo -e "${LTCYAN}Copying grub2 files from squashfs image to USB drive partition 1 ...${NC}"
           echo -e "${LTCYAN}---------------------------------------------------------------------${NC}"
@@ -490,14 +517,38 @@ create_live_usb_grub() {
           echo -e "${LTGREEN}  COMMAND:${GRAY} mkdir -p /tmp/squashmount-${RAND}${NC}"
           mkdir -p /tmp/squashmount-${RAND}
 
-          echo -e "${LTGREEN}  COMMAND:${GRAY} mount -o loop -t squashfs $(ls /tmp/isomount-${RAND}/*read-only*) /tmp/squashmount-${RAND}${NC}"
-          mount -o loop -t squashfs $(ls /tmp/isomount-${RAND}/*read-only*) /tmp/squashmount-${RAND}
+          echo -e "${LTGREEN}  COMMAND:${GRAY} mount -o loop -t squashfs /tmp/isomount-${RAND}/${ISOMOUNT_SQUASHFS_DIR}/$(ls /tmp/isomount-${RAND}/${ISOMOUNT_SQUASHFS_DIR}) /tmp/squashmount-${RAND}${NC}"
+          mount -o loop -t squashfs /tmp/isomount-${RAND}/${ISOMOUNT_SQUASHFS_DIR}/$(ls /tmp/isomount-${RAND}/${ISOMOUNT_SQUASHFS_DIR}) /tmp/squashmount-${RAND}
           echo
 
-          echo -e "${LTCYAN}-Copying grub2 files to USB drive ...${NC}"
-          echo -e "${LTGREEN}  COMMAND:${GRAY} cp -a /tmp/squashmount-${RAND}/boot/grub2/* /tmp/usbmount-${RAND}/boot/grub2/${NC}"
-          cp -a /tmp/squashmount-${RAND}/boot/grub2/* /tmp/usbmount-${RAND}/boot/grub2/
+          if [ -d /tmp/squashmount-${RAND}/LiveOS ]
+          then
+            #--- mount rootfs in squashfs on live iso
+            echo -e "${LTCYAN}-Mounting rootfs image in squashfs image in Live ISO ...${NC}"
+            ROOTFS_SRC_DIR=/tmp/rootfsmount-${RAND}
+            mkdir -p /tmp/rootfsmount-${RAND}
+            echo -e "${LTGREEN}  COMMAND:${GRAY} mount -o loop /tmp/squashmount-${RAND}/LiveOS/* /tmp/rootfsmount-${RAND}${NC}"
+            mount -o loop /tmp/squashmount-${RAND}/LiveOS/* /tmp/rootfsmount-${RAND}
           echo
+          else
+            ROOTFS_SRC_DIR=/tmp/squashmount-${RAND}
+          fi
+
+          echo -e "${LTCYAN}-Copying grub2 files to USB drive ...${NC}"
+          echo -e "${LTGREEN}  COMMAND:${GRAY} cp -a ${ROOTFS_SRC_DIR}/boot/grub2/* /tmp/usbmount-${RAND}/boot/grub2/${NC}"
+          cp -a ${ROOTFS_SRC_DIR}/boot/grub2/* /tmp/usbmount-${RAND}/boot/grub2/
+          echo
+          #echo "Press [Enter] to continue";read
+
+          if [ -d /tmp/rootfsmount-${RAND} ]
+          then
+            echo -e "${LTCYAN}-Unmounting rootfs image in squashfs image in Live ISO ...${NC}"
+            echo -e "${LTGREEN}  COMMAND:${GRAY} umount /tmp/rootfsmount-${RAND}${NC}"
+            umount /tmp/rootfsmount-${RAND}
+            echo -e "${LTGREEN}  COMMAND:${GRAY} rm -rf /tmp/rootfsmount-${RAND}${NC}"
+            rm -rf /tmp/rootfsmount-${RAND}
+          echo
+          fi
 
           echo -e "${LTCYAN}-Unmounting squashfs image in Live ISO ...${NC}"
           echo -e "${LTGREEN}  COMMAND:${GRAY} umount /tmp/squashmount-${RAND}${NC}"
@@ -567,91 +618,137 @@ copy_homedir_files_to_usb() {
       suse)
         case ${PART_COUNT} in
           2)
-            echo
-            echo -e "${LTCYAN}Copying home dir files to ${LABEL2} partition of USB drive ...${NC}"
-            echo -e "${LTCYAN}---------------------------------------------------------------------${NC}"
-   
-            #--- mount home dir partition
-            echo -e "${LTCYAN}-Mounting ${LABEL2} partition of USB drive ...${NC}"
-            echo -e "${LTGREEN}  COMMAND:${GRAY} mkdir /tmp/homemount-${RAND}${NC}"
-            mkdir -p /tmp/homemount-${RAND}
-   
-            echo -e "${LTGREEN}COMMAND:${GRAY} mount /dev/disk/by-label/${LABEL2} /tmp/homemount-${RAND}${NC}"
-            mount /dev/disk/by-label/${LABEL2} /tmp/homemount-${RAND}
-            echo
-   
-            #--- mount usb partition 1
-            echo -e "${LTCYAN}-Mounting ${LABEL} partition of USB drive ...${NC}"
-            echo -e "${LTGREEN}  COMMAND:${GRAY} mkdir -p /tmp/usbmount-${RAND}${NC}"
-            mkdir -p /tmp/usbmount-${RAND}
-   
-            echo -e "${LTGREEN}COMMAND:${GRAY} mount ${DISK_DEV}1 /tmp/usbmount-${RAND}${NC}"
-            mount ${DISK_DEV}1 /tmp/usbmount-${RAND}
-            echo
-   
-            #--- mount live iso
-            echo -e "${LTCYAN}-Mounting Live ISO image ...${NC}"
-            echo -e "${LTGREEN}  COMMAND:${GRAY} mkdir /tmp/isomount-${RAND}${NC}"
-            mkdir -p /tmp/isomount-${RAND}
-   
-            echo -e "${LTGREEN}  COMMAND:${GRAY} mount -o loop ${ISO_IMAGE} /tmp/isomount-${RAND}${NC}"
-            mount -o loop ${ISO_IMAGE} /tmp/isomount-${RAND}
-            echo
-   
-            #--- mount squashfs on live iso
-            echo -e "${LTCYAN}-Mounting squashfs image in the Live ISO ...${NC}"
-            echo -e "${LTGREEN}  COMMAND:${GRAY} mkdir -p /tmp/squashmount-${RAND}${NC}"
-            mkdir -p /tmp/squashmount-${RAND}
-   
-            echo -e "${LTGREEN}  COMMAND:${GRAY} mount -o loop -t squashfs $(ls /tmp/isomount-${RAND}/*read-only*) /tmp/squashmount-${RAND}${NC}"
-            mount -o loop -t squashfs $(ls /tmp/isomount-${RAND}/*read-only*) /tmp/squashmount-${RAND}
-            echo
+	    case ${LABEL2} in
+	      LIVE_HOME)
+                echo
+                echo -e "${LTCYAN}Copying home dir files to ${LABEL2} partition of USB drive ...${NC}"
+                echo -e "${LTCYAN}---------------------------------------------------------------------${NC}"
+       
+                #--- mount home dir partition
+                echo -e "${LTCYAN}-Mounting ${LABEL2} partition of USB drive ...${NC}"
+                echo -e "${LTGREEN}  COMMAND:${GRAY} mkdir /tmp/homemount-${RAND}${NC}"
+                mkdir -p /tmp/homemount-${RAND}
+       
+                echo -e "${LTGREEN}COMMAND:${GRAY} mount /dev/disk/by-label/${LABEL2} /tmp/homemount-${RAND}${NC}"
+                mount /dev/disk/by-label/${LABEL2} /tmp/homemount-${RAND}
+                echo
+       
+                #--- mount usb partition 1
+                echo -e "${LTCYAN}-Mounting ${LABEL} partition of USB drive ...${NC}"
+                echo -e "${LTGREEN}  COMMAND:${GRAY} mkdir -p /tmp/usbmount-${RAND}${NC}"
+                mkdir -p /tmp/usbmount-${RAND}
+       
+                echo -e "${LTGREEN}COMMAND:${GRAY} mount ${DISK_DEV}1 /tmp/usbmount-${RAND}${NC}"
+                mount ${DISK_DEV}1 /tmp/usbmount-${RAND}
+                echo
+       
+                #--- mount live iso
+                echo -e "${LTCYAN}-Mounting Live ISO image ...${NC}"
+                echo -e "${LTGREEN}  COMMAND:${GRAY} mkdir /tmp/isomount-${RAND}${NC}"
+                mkdir -p /tmp/isomount-${RAND}
+       
+                echo -e "${LTGREEN}  COMMAND:${GRAY} mount -o loop ${ISO_IMAGE} /tmp/isomount-${RAND}${NC}"
+                mount -o loop ${ISO_IMAGE} /tmp/isomount-${RAND}
+                echo
+       
+                if $(file /tmp/isomount-${RAND}/${ISOMOUNT_SQUASHFS_DIR}/$(ls /tmp/isomount-${RAND}/${ISOMOUNT_SQUASHFS_DIR}) | grep -q "Squashfs filesystem") > /dev/null
+                then
+                  #--- mount squashfs on live iso
+                  echo -e "${LTCYAN}-Mounting squashfs image in the Live ISO ...${NC}"
+                  echo -e "${LTGREEN}  COMMAND:${GRAY} mkdir -p /tmp/squashmount-${RAND}${NC}"
+                  mkdir -p /tmp/squashmount-${RAND}
+         
+                  if [ -d /tmp/isomount-${RAND}/LiveOS ]
+                    then
+                 	    ISOMOUNT_SQUASHFS_DIR="LiveOS"
+                      echo "ISOMOUNT_SQUASHFS_DIR=LiveOS"
+                    else
+                      ISOMOUNT_SQUASHFS_DIR="*read-only*"
+                      echo "ISOMOUNT_SQUASHFS_DIR=*read-only*"
+                  fi
  
-            #--- copy home dir files
-            echo -e "${LTCYAN}-Copying home directory files to ${LABEL2} parition ...${NC}"
-            echo -e "${LTGREEN}  COMMAND:${GRAY} cp -a /tmp/squashmount-${RAND}/home/* /tmp/homemount-${RAND}/${NC}"
-            cp -a /tmp/squashmount-${RAND}/home/* /tmp/homemount-${RAND}/
+                  echo -e "${LTGREEN}  COMMAND:${GRAY} mount -o loop -t squashfs /tmp/isomount-${RAND}/${ISOMOUNT_SQUASHFS_DIR}/$(ls /tmp/isomount-${RAND}/${ISOMOUNT_SQUASHFS_DIR}) /tmp/squashmount-${RAND}${NC}"
+                  mount -o loop -t squashfs /tmp/isomount-${RAND}/${ISOMOUNT_SQUASHFS_DIR}/$(ls /tmp/isomount-${RAND}/${ISOMOUNT_SQUASHFS_DIR}) /tmp/squashmount-${RAND}
+                  echo
 
-            echo -e "${LTGREEN}  COMMAND:${GRAY} rm -rf /tmp/homemount-${RAND}/lost+found${NC}"
-            rm -rf /tmp/homemount-${RAND}/lost+found
-            echo
-   
-            #--- unmount squashfs on live iso
-            echo -e "${LTCYAN}-Unmounting squashfs image ...${NC}"
-            echo -e "${LTGREEN}  COMMAND:${GRAY} umount /tmp/squashmount-${RAND}${NC}"
-            umount /tmp/squashmount-${RAND}
-   
-            echo -e "${LTGREEN}  COMMAND:${GRAY} rm -rf /tmp/squashmount-${RAND}${NC}"
-            rm -rf /tmp/squashmount-${RAND}
-            echo
-   
-            #--- unmount live iso
-            echo -e "${LTCYAN}-Unmounting Live ISO image ...${NC}"
-            echo -e "${LTGREEN}  COMMAND:${GRAY} umount /tmp/isomount-${RAND}${NC}"
-            umount /tmp/isomount-${RAND}
-   
-            echo -e "${LTGREEN}  COMMAND:${GRAY} rm -rf /tmp/isomount-${RAND}${NC}"
-            rm -rf /tmp/isomount-${RAND}
-   
-            #--- unmount usb partition 1
-            echo -e "${LTCYAN}-Unmounting ${LABEL} partition of USB drive ...${NC}"
-            echo -e "${LTGREEN}  COMMAND:${GRAY} umount /tmp/usbmount-${RAND}${NC}"
-            umount /tmp/usbmount-${RAND}
-   
-            echo -e "${LTGREEN}  COMMAND:${GRAY} rm -rf /tmp/usbmount-${RAND}${NC}"
-            rm -rf /tmp/usbmount-${RAND}
-            echo
-   
-            #--- unmount home dir partition
-            echo -e "${LTCYAN}-Unmounting ${LABEL2} partition of USB drive ...${NC}"
-            echo -e "${LTGREEN}  COMMAND:${GRAY} umount /tmp/homemount-${RAND}${NC}"
-            umount /tmp/homemount-${RAND}
-   
-            echo -e "${LTGREEN}  COMMAND:${GRAY} rm -rf /tmp/homemount-${RAND}${NC}"
-            rm -rf /tmp/homemount-${RAND}
-   
-            echo -e "${LTCYAN}---------------------------------------------------------------------${NC}"
-            echo
+                  if [ -d /tmp/squashmount-${RAND}/LiveOS ]
+                  then
+                    #--- mount rootfs in squashfs on live iso
+                    echo -e "${LTCYAN}-Mounting rootfs image in squashfs image in Live ISO ...${NC}"
+                    HOME_SRC_DIR=/tmp/rootfsmount-${RAND}
+                    mkdir -p /tmp/rootfsmount-${RAND}
+                    echo -e "${LTGREEN}  COMMAND:${GRAY} mount -o loop /tmp/squashmount-${RAND}/LiveOS/* /tmp/rootfsmount-${RAND}${NC}"
+                    mount -o loop /tmp/squashmount-${RAND}/LiveOS/* /tmp/rootfsmount-${RAND}
+                    echo
+                  else
+                    HOME_SRC_DIR=/tmp/squashmount-${RAND}
+                  fi
+                else 
+                  HOME_SRC_DIR=/tmp/isomount-${RAND}
+                fi 
+
+                #--- copy home dir files
+                echo -e "${LTCYAN}-Copying home directory files to ${LABEL2} parition ...${NC}"
+                echo -e "${LTGREEN}  COMMAND:${GRAY} cp -a ${HOME_SRC_DIR}/home/* /tmp/homemount-${RAND}/${NC}"
+                cp -a ${HOME_SRC_DIR}/home/* /tmp/homemount-${RAND}/
+  
+                echo -e "${LTGREEN}  COMMAND:${GRAY} rm -rf /tmp/homemount-${RAND}/lost+found${NC}"
+                rm -rf /tmp/homemount-${RAND}/lost+found
+                echo
+
+                if [ -d /tmp/rootfsmount-${RAND} ]
+                then
+                  #--- unmount rootfs in squashfs on live iso
+                  echo -e "${LTCYAN}-Unmounting rootfs image in squashfs image in Live ISO ...${NC}"
+                  echo -e "${LTGREEN}  COMMAND:${GRAY} umount /tmp/rootfsmount-${RAND}${NC}"
+                  umount /tmp/rootfsmount-${RAND}
+                  echo -e "${LTGREEN}  COMMAND:${GRAY} rm -rf /tmp/rootfsmount-${RAND}${NC}"
+                  rm -rf /tmp/rootfsmount-${RAND}
+                echo
+                fi
+       
+                #if [ -d /tmp/squashmount-${RAND} ]
+                if mount | grep -q squashmount-${RAND}
+                then
+                  #--- unmount squashfs on live iso
+                  echo -e "${LTCYAN}-Unmounting squashfs image in Live ISO ...${NC}"
+                  echo -e "${LTGREEN}  COMMAND:${GRAY} umount /tmp/squashmount-${RAND}${NC}"
+                  umount /tmp/squashmount-${RAND}
+                fi
+       
+                echo -e "${LTGREEN}  COMMAND:${GRAY} rm -rf /tmp/squashmount-${RAND}${NC}"
+                rm -rf /tmp/squashmount-${RAND}
+                echo
+       
+                #--- unmount live iso
+                echo -e "${LTCYAN}-Unmounting Live ISO image ...${NC}"
+                echo -e "${LTGREEN}  COMMAND:${GRAY} umount /tmp/isomount-${RAND}${NC}"
+                umount /tmp/isomount-${RAND}
+       
+                echo -e "${LTGREEN}  COMMAND:${GRAY} rm -rf /tmp/isomount-${RAND}${NC}"
+                rm -rf /tmp/isomount-${RAND}
+       
+                #--- unmount usb partition 1
+                echo -e "${LTCYAN}-Unmounting ${LABEL} partition of USB drive ...${NC}"
+                echo -e "${LTGREEN}  COMMAND:${GRAY} umount /tmp/usbmount-${RAND}${NC}"
+                umount /tmp/usbmount-${RAND}
+       
+                echo -e "${LTGREEN}  COMMAND:${GRAY} rm -rf /tmp/usbmount-${RAND}${NC}"
+                rm -rf /tmp/usbmount-${RAND}
+                echo
+       
+                #--- unmount home dir partition
+                echo -e "${LTCYAN}-Unmounting ${LABEL2} partition of USB drive ...${NC}"
+                echo -e "${LTGREEN}  COMMAND:${GRAY} umount /tmp/homemount-${RAND}${NC}"
+                umount /tmp/homemount-${RAND}
+       
+                echo -e "${LTGREEN}  COMMAND:${GRAY} rm -rf /tmp/homemount-${RAND}${NC}"
+                rm -rf /tmp/homemount-${RAND}
+       
+                echo -e "${LTCYAN}---------------------------------------------------------------------${NC}"
+                echo
+	      ;;
+	    esac
           ;;
         esac
       ;;
