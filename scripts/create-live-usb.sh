@@ -1,6 +1,6 @@
 #!/bin/bash
-# version: 2.3.0
-# date: 2018-05-07
+# version: 2.4.0
+# date: 2019-08-07
 
 ##############################################################################
 #                           Global Variables
@@ -479,104 +479,6 @@ create_live_usb_grub() {
         echo
 #echo "Press [Enter] to continue";read;echo
 
-        if [ -d /tmp/isomount-${RAND}/LiveOS ]
-          then
-            ISOMOUNT_SQUASHFS_DIR="LiveOS"
-            #echo "ISOMOUNT_SQUASHFS_DIR=LiveOS"
-          else
-            ISOMOUNT_SQUASHFS_DIR="*read-only*"
-            #echo "ISOMOUNT_SQUASHFS_DIR=*read-only*"
-        fi
-
-        #echo "Files in isomount-${RAND}"
-        #echo "----------------------------------------"
-        #echo "ls /tmp/isomount-${RAND}"
-        #ls /tmp/isomount-${RAND}
-        #echo "ls /tmp/isomount-${RAND}/${ISOMOUNT_SQUASHFS_DIR}"
-        #ls /tmp/isomount-${RAND}/${ISOMOUNT_SQUASHFS_DIR}
-        #echo "file /tmp/isomount-${RAND}/${ISOMOUNT_SQUASHFS_DIR}/$(ls /tmp/isomount-${RAND}/${ISOMOUNT_SQUASHFS_DIR})"
-        #file /tmp/isomount-${RAND}/${ISOMOUNT_SQUASHFS_DIR}/$(ls /tmp/isomount-${RAND}/${ISOMOUNT_SQUASHFS_DIR})
-        #file /tmp/isomount-${RAND}/${ISOMOUNT_SQUASHFS_DIR}/$(ls /tmp/isomount-${RAND}/${ISOMOUNT_SQUASHFS_DIR}) | grep -q "Squashfs filesystem"
-        #echo
-        #echo "Press [Enter] to continue";read;echo
-
-        if $(file /tmp/isomount-${RAND}/${ISOMOUNT_SQUASHFS_DIR}/$(ls /tmp/isomount-${RAND}/${ISOMOUNT_SQUASHFS_DIR}) | grep -q "Squashfs filesystem") > /dev/null
-        then
-          echo -e "${LTCYAN}Copying grub2 files from squashfs image to USB drive partition 1 ...${NC}"
-          echo -e "${LTCYAN}---------------------------------------------------------------------${NC}"
-
-          echo -e "${LTCYAN}-Mounting ${LABEL} partition of USB drive ...${NC}"
-          echo -e "${LTGREEN}  COMMAND:${GRAY} mkdir -p /tmp/usbmount-${RAND}${NC}"
-          mkdir -p /tmp/usbmount-${RAND}
-
-          echo -e "${LTGREEN}  COMMAND:${GRAY} mount ${DISK_DEV}1 /tmp/usbmount-${RAND}${NC}"
-          mount ${DISK_DEV}1 /tmp/usbmount-${RAND}
-          echo
-
-          echo -e "${LTCYAN}-Mounting squashfs image in Live ISO ...${NC}"
-          echo -e "${LTGREEN}  COMMAND:${GRAY} mkdir -p /tmp/squashmount-${RAND}${NC}"
-          mkdir -p /tmp/squashmount-${RAND}
-
-          echo -e "${LTGREEN}  COMMAND:${GRAY} mount -o loop -t squashfs /tmp/isomount-${RAND}/${ISOMOUNT_SQUASHFS_DIR}/$(ls /tmp/isomount-${RAND}/${ISOMOUNT_SQUASHFS_DIR}) /tmp/squashmount-${RAND}${NC}"
-          mount -o loop -t squashfs /tmp/isomount-${RAND}/${ISOMOUNT_SQUASHFS_DIR}/$(ls /tmp/isomount-${RAND}/${ISOMOUNT_SQUASHFS_DIR}) /tmp/squashmount-${RAND}
-          echo
-
-          if [ -d /tmp/squashmount-${RAND}/LiveOS ]
-          then
-            #--- mount rootfs in squashfs on live iso
-            echo -e "${LTCYAN}-Mounting rootfs image in squashfs image in Live ISO ...${NC}"
-            ROOTFS_SRC_DIR=/tmp/rootfsmount-${RAND}
-            mkdir -p /tmp/rootfsmount-${RAND}
-            echo -e "${LTGREEN}  COMMAND:${GRAY} mount -o loop /tmp/squashmount-${RAND}/LiveOS/* /tmp/rootfsmount-${RAND}${NC}"
-            mount -o loop /tmp/squashmount-${RAND}/LiveOS/* /tmp/rootfsmount-${RAND}
-          echo
-          else
-            ROOTFS_SRC_DIR=/tmp/squashmount-${RAND}
-          fi
-
-          echo -e "${LTCYAN}-Copying grub2 files to USB drive ...${NC}"
-          echo -e "${LTGREEN}  COMMAND:${GRAY} cp -a ${ROOTFS_SRC_DIR}/boot/grub2/* /tmp/usbmount-${RAND}/boot/grub2/${NC}"
-          cp -a ${ROOTFS_SRC_DIR}/boot/grub2/* /tmp/usbmount-${RAND}/boot/grub2/
-          echo
-          #echo "Press [Enter] to continue";read
-
-          if [ -d /tmp/rootfsmount-${RAND} ]
-          then
-            echo -e "${LTCYAN}-Unmounting rootfs image in squashfs image in Live ISO ...${NC}"
-            echo -e "${LTGREEN}  COMMAND:${GRAY} umount /tmp/rootfsmount-${RAND}${NC}"
-            umount /tmp/rootfsmount-${RAND}
-            echo -e "${LTGREEN}  COMMAND:${GRAY} rm -rf /tmp/rootfsmount-${RAND}${NC}"
-            rm -rf /tmp/rootfsmount-${RAND}
-          echo
-          fi
-
-          echo -e "${LTCYAN}-Unmounting squashfs image in Live ISO ...${NC}"
-          echo -e "${LTGREEN}  COMMAND:${GRAY} umount /tmp/squashmount-${RAND}${NC}"
-          umount /tmp/squashmount-${RAND}
-
-          echo -e "${LTGREEN}  COMMAND:${GRAY} rm -rf /tmp/squashmount-${RAND}${NC}"
-          rm -rf /tmp/squashmount-${RAND}
-          echo
-
-          echo -e "${LTCYAN}-Unmounting ${LABEL} partition of USB drive ...${NC}"
-          echo -e "${LTGREEN}  COMMAND:${GRAY} umount /tmp/usbmount-${RAND}${NC}"
-          umount /tmp/usbmount-${RAND}
-
-          echo -e "${LTGREEN}  COMMAND:${GRAY} rm -rf /tmp/usbmount-${RAND}${NC}"
-          rm -rf /tmp/usbmount-${RAND}
-
-          echo -e "${LTCYAN}---------------------------------------------------------------------${NC}"
-          echo
-        fi
-
-        echo -e "${LTCYAN}-Unmounting Live ISO image ...${NC}"
-        echo -e "${LTGREEN}  COMMAND:${GRAY} umount /tmp/isomount-${RAND}${NC}"
-        umount /tmp/isomount-${RAND}
-
-        echo -e "${LTGREEN}  COMMAND:${GRAY} rm -rf /tmp/isomount-${RAND}${NC}"
-        rm -rf /tmp/isomount-${RAND}
-
-        echo
       ;;
       *)
         echo
@@ -612,7 +514,7 @@ copy_homedir_files_to_usb() {
     case ${TYPE} in
       clonezilla)
         echo
-        echo -e "(Copying home dir filss from Clonzilla not supported.  Skipping ...)"
+        echo -e "(Copying home dir files from Clonzilla not supported.  Skipping ...)"
         echo
       ;;
       suse)
@@ -808,12 +710,13 @@ print_iso_list() {
   for ISO in ${ISO_LIST}
   do
     local INSTALL_ISO_IMAGE="$(echo ${ISO_IMAGE} | cut -d \. -f 1)-install.iso"
-    if [ -e ${ISTALL_ISO_IMAGE} ]
+    if [ -e ${INSTALL_ISO_IMAGE} ]
     then
       echo -e "${LTPURPLE}Live ISO ${COUNT}: ${GRAY}${ISO}*${NC}"
       INSTALL_ISO_IMAGE_PRESENT=Y
     else
       echo -e "${LTPURPLE}Live ISO ${COUNT}: ${GRAY}${ISO}${NC}"
+      INSTALL_ISO_IMAGE_PRESENT=N
     fi
     ((COUNT++))
   done
