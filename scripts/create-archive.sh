@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# version: 1.1.1
+# version: 1.1.3
 # date: 20190812
 
 usage() {
@@ -53,7 +53,7 @@ in
     exit
   ;;
   *)
-    ARCHIVE_CMD="7z a -t7z -m0=LZMA -mmt=on -v2g"
+    ARCHIVE_CMD="7z a -t7z -m0=LZMA2 -mmt=on -v2g"
     ARCHIVE_EXT="7z"
   ;;
 esac

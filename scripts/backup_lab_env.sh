@@ -1,6 +1,6 @@
 #!/bin/bash
-# version: 1.0.4
-# date: 2017-05-16
+# version: 1.1.1
+# date: 2017-09-05
 
 ### Colors ###
 RED='\e[0;31m'
@@ -21,6 +21,13 @@ WHITE='\e[1;37m'
 NC='\e[0m'
 ##############
 
+SCRIPTS_DIR="${HOME}/scripts"
+COURSE_FILES_DIR="${HOME}/course_files"
+PDF_DIR="${HOME}/pdf"
+VM_DIR="/home/VMs"
+ISO_DIR="/home/iso"
+IMAGES_DIR="/home/images"
+
 run () {
   echo -e "${LTGREEN}COMMAND: ${GRAY}$*${NC}"
   "$@"
@@ -28,16 +35,16 @@ run () {
 
 usage() {
   echo
-  echo "USAGE: $0 [<course_id>] [<archive_format>]"
+  echo -e "${LTGREEN}USAGE:${GRAY} $0 [<course_id>] [<archive_format>]${NC}"
   echo
-  echo "  Archive Formats:"
-  echo "    7z        -7zip with LZMA compression split into 2G files"
-  echo "    7zma2     -7zip with LZMA2 compression split into 2G files"
-  echo "    7zcopy    -7zip with no compression split into 2G files"
-  echo "    tar       -tar archive with no compression"
-  echo "    tgz       -gzip  compressed tar archive"
-  echo "    tbz       -bzip2 compressed tar archive"
-  echo "    txz       -xz compressed tar archive"
+  echo -e "${LTPURPLE}  Archive Formats:${NC}"
+  echo -e "${GRAY}    7z        ${LTPURPLE}-7zip with LZMA compression split into 2G files${NC}"
+  echo -e "${GRAY}    7zma2     ${LTPURPLE}-7zip with LZMA2 compression split into 2G files (this is default)${NC}"
+  echo -e "${GRAY}    7zcopy    ${LTPURPLE}-7zip with no compression split into 2G files${NC}"
+  echo -e "${GRAY}    tar       ${LTPURPLE}-tar archive with no compression${NC}"
+  echo -e "${GRAY}    tgz       ${LTPURPLE}-gzip  compressed tar archive${NC}"
+  echo -e "${GRAY}    tbz       ${LTPURPLE}-bzip2 compressed tar archive${NC}"
+  echo -e "${GRAY}    txz       ${LTPURPLE}-xz compressed tar archive${NC}"
   echo
 }
 
@@ -47,12 +54,12 @@ usage() {
 
 if [ -z ${1} ]
 then
-  if ! [ -e ./config ]
+  if ! [ -e ./config/lab_env.cfg ]
   then
     echo
-    echo -e "${LT_RED}ERROR: You must provide the course ID of the lab environment to backup.${NC}"
-    echo -e "${LT_RED}       or run this command from an installed lab environment's"
-    echo -e "${LT_RED}       ~/config/<course_num>/ directory.${NC}"
+    echo -e "${LTRED}ERROR: You must provide the course ID of the lab environment to backup.${NC}"
+    echo -e "${LTRED}       or run this command from an installed lab environment's"
+    echo -e "${LTRED}       ${SCRIPTS_DIR}/<course_num>/ directory.${NC}"
     echo
     usage
     exit
@@ -71,6 +78,16 @@ else
   else
     COURSE_ID=${1}
   fi
+fi
+
+if ! [ -e ${VM_DIR}/${COURSE_ID} ]
+then
+  echo
+  echo -e "${LTRED}ERROR: The provided course (COURSE_ID=${LTGREEN}${COURSE_ID}${LTRED}) doesn't exist.${NC}"
+  echo
+  echo -e "${LTRED}Exiting ...${NC}"
+  echo
+  exit 1
 fi
 
 case ${2}
@@ -111,7 +128,7 @@ esac
 
 COURSE_BACKUP_BASE_DIR="/install/courses"
 COURSE_BACKUP_DIR="${COURSE_BACKUP_BASE_DIR}/${COURSE_ID}-backup_$(date +%Y%m%d.%H%M%S)"
-COURSE_VM_DIR="/home/VMs/${COURSE_ID}"
+COURSE_VM_DIR="${VM_DIR}/${COURSE_ID}"
 
 #echo
 #echo COURSE_ID=${COURSE_ID}
@@ -120,6 +137,12 @@ COURSE_VM_DIR="/home/VMs/${COURSE_ID}"
 #echo COURSE_BACKUP_BASE_DIR=${COURSE_BACKUP_BASE_DIR}
 #echo COURSE_BACKUP_DIR=${COURSE_BACKUP_DIR}
 #echo COURSE_VM_DIR=${COURSE_VM_DIR}
+#echo "---------------------------------"
+#echo Source scripts dir=${SCRIPTS_DIR}/${COURSE_ID}/
+#echo Source course_files dir=${COURSE_FILES_DIR}/${COURSE_ID}/
+#echo Source PDF dir=${PDF_DIR}/${COURSE_ID}/
+#echo Source ISO dir=${ISO_DIR}/${COURSE_ID}/
+#echo Source Images dir=${IMAGES_DIR}/${COURSE_ID}/
 #echo
 #read
 
@@ -149,13 +172,13 @@ back_up_config() {
   echo -e "${LTBLUE}Backing up config ...${NC}"
   echo -e "${LTBLUE}---------------------------------------------------------${NC}"
 
-  if [ -e ~/scripts/${COURSE_ID}/config ]
+  if [ -e ${SCRIPTS_DIR}/${COURSE_ID}/config ]
   then
     run mkdir -p ${COURSE_BACKUP_DIR}/config
-    test -e ~/scripts/${COURSE_ID}/config && run cp -R ~/scripts/${COURSE_ID}/config/* ${COURSE_BACKUP_DIR}/config/
-    test -e ~/scripts/${COURSE_ID}/install_lab_env.sh && run cp -R ~/scripts/${COURSE_ID}/install_lab_env.sh ${COURSE_BACKUP_DIR}/
-    test -e ~/scripts/${COURSE_ID}/remove_lab_env.sh && run cp -R ~/scripts/${COURSE_ID}/remove_lab_env.sh ${COURSE_BACKUP_DIR}/
-    test -e ~/scripts/${COURSE_ID}/backup_lab_env.sh && run cp -R ~/scripts/${COURSE_ID}/backup_lab_env.sh ${COURSE_BACKUP_DIR}/
+    test -e ${SCRIPTS_DIR}/${COURSE_ID}/config && run cp -R ${SCRIPTS_DIR}/${COURSE_ID}/config/* ${COURSE_BACKUP_DIR}/config/
+    test -e ${SCRIPTS_DIR}/${COURSE_ID}/install_lab_env.sh && run cp -R ${SCRIPTS_DIR}/${COURSE_ID}/install_lab_env.sh ${COURSE_BACKUP_DIR}/
+    test -e ${SCRIPTS_DIR}/${COURSE_ID}/remove_lab_env.sh && run cp -R ${SCRIPTS_DIR}/${COURSE_ID}/remove_lab_env.sh ${COURSE_BACKUP_DIR}/
+    test -e ${SCRIPTS_DIR}/${COURSE_ID}/backup_lab_env.sh && run cp -R ${SCRIPTS_DIR}/${COURSE_ID}/backup_lab_env.sh ${COURSE_BACKUP_DIR}/
     echo
   else
     echo -e  "(nothing to back up)"
@@ -167,10 +190,10 @@ back_up_course_files() {
   echo -e "${LTBLUE}Backing up course_files ...${NC}"
   echo -e "${LTBLUE}---------------------------------------------------------${NC}"
 
-  if [ -e ~/course_files/${COURSE_ID} ]
+  if [ -e ${COURSE_FILES_DIR}/${COURSE_ID} ]
   then
     run mkdir -p ${COURSE_BACKUP_DIR}/course_files
-    run cp -R ~/course_files/${COURSE_ID}/* ${COURSE_BACKUP_DIR}/course_files/
+    run cp -R ${COURSE_FILES_DIR}/${COURSE_ID}/* ${COURSE_BACKUP_DIR}/course_files/
     echo
   else
     echo -e  "(nothing to back up)"
@@ -182,10 +205,10 @@ back_up_scripts() {
   echo -e "${LTBLUE}Backing up scripts ...${NC}"
   echo -e "${LTBLUE}---------------------------------------------------------${NC}"
 
-  if [ -e ~/scripts/${COURSE_ID} ]
+  if [ -e ${SCRIPTS_DIR}/${COURSE_ID} ]
   then
     run mkdir -p ${COURSE_BACKUP_DIR}/scripts
-    run cp -R ~/scripts/${COURSE_ID}/* ${COURSE_BACKUP_DIR}/scripts/
+    run cp -R ${SCRIPTS_DIR}/${COURSE_ID}/* ${COURSE_BACKUP_DIR}/scripts/
     echo -e "${LTCYAN}(removing install/remove scripts and config ...)${NC}"
     test -e ${COURSE_BACKUP_DIR}/scripts/config && run rm -rf ${COURSE_BACKUP_DIR}/scripts/config
     test -e ${COURSE_BACKUP_DIR}/scripts/install_lab_env.sh && run rm -rf ${COURSE_BACKUP_DIR}/scripts/install_lab_env.sh
@@ -202,10 +225,10 @@ back_up_pdfs() {
   echo -e "${LTBLUE}Backing up PDFs ...${NC}"
   echo -e "${LTBLUE}---------------------------------------------------------${NC}"
 
-  if [ -e ~/pdf/${COURSE_ID} ]
+  if [ -e ${PDF_DIR}/${COURSE_ID} ]
   then
     run mkdir -p ${COURSE_BACKUP_DIR}/pdf
-    run cp -R ~/pdf/${COURSE_ID}/* ${COURSE_BACKUP_DIR}/pdf/
+    run cp -R ${PDF_DIR}/${COURSE_ID}/* ${COURSE_BACKUP_DIR}/pdf/
     echo
   else
     echo -e  "(nothing to back up)"
@@ -217,10 +240,10 @@ back_up_isos() {
   echo -e "${LTBLUE}Backing up ISOs ...${NC}"
   echo -e "${LTBLUE}---------------------------------------------------------${NC}"
 
-  if [ -e /home/iso/${COURSE_ID} ]
+  if [ -e ${ISO_DIR}/${COURSE_ID} ]
   then
     run mkdir -p ${COURSE_BACKUP_DIR}/iso
-    run cp -R /home/iso/${COURSE_ID}/* ${COURSE_BACKUP_DIR}/iso/
+    run cp -R ${ISO_DIR}/${COURSE_ID}/* ${COURSE_BACKUP_DIR}/iso/
     echo
   else
     echo -e  "(nothing to back up)"
@@ -232,10 +255,10 @@ back_up_images() {
   echo -e "${LTBLUE}Backing up images ...${NC}"
   echo -e "${LTBLUE}---------------------------------------------------------${NC}"
 
-  if [ -e /home/images/${COURSE_ID} ]
+  if [ -e ${IMAGES_DIR}/${COURSE_ID} ]
   then
     run mkdir -p ${COURSE_BACKUP_DIR}/images
-    run cp -R /home/images/${COURSE_ID}/* ${COURSE_BACKUP_DIR}/images/
+    run cp -R ${IMAGES_DIR}/${COURSE_ID}/* ${COURSE_BACKUP_DIR}/images/
     echo
   else
     echo -e  "(nothing to back up)"
