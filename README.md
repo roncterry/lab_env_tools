@@ -159,11 +159,11 @@ qemu-img create -f qcow2 /home/VMs/<COURSE_ID>/<NAME_OF_VM>/disk01.qcow2 20G
 
 ## Virtual Machine Storage Pools (Optional)
 
-If you are using the [install_lab_env](https://github.com/roncterry/install_lab_env) framework to install your the VMs in your lab environment, and you wish to have a storage pool automatically created for the VM's directory (/home/VMs/<COURSE_ID>/<NAME_OF_VM>) when the VM is registered with Libvirt, then create a file in the VM's directory named <NAME_OF_VM>.pool.xml that contains the pool description. 
+If you are using the [Installer Framework](https://github.com/roncterry/install_lab_env) to install your the VMs in your lab environment, and you wish to have a storage pool automatically created for the VM's directory (/home/VMs/<COURSE_ID>/<NAME_OF_VM>) when the VM is registered with Libvirt, then create a file in the VM's directory named <NAME_OF_VM>.pool.xml that contains the pool description. 
 
 ## Virtual Machine Virtual BMC Devices (Optional)
 
-If you are using the [install_lab_env](https://github.com/roncterry/install_lab_env) framework to install your the VMs in your lab environment, and you wish to have virtual BMC devices created for your VM when it is registered with Libvirt, then create a file in the VM's directory named <NAME_OF_VM>.vbmc that contains the virtual BMC device description. An example of this file can be found in the [vbmcctl](https://github.com/roncterry/vbmcctl) project (vbmcctl.cfg.example). The **vbmcctl** command must be installed on the host machine for this functionality to work. 
+If you are using the [Installer Framework](https://github.com/roncterry/install_lab_env) to install your the VMs in your lab environment, and you wish to have virtual BMC devices created for your VM when it is registered with Libvirt, then create a file in the VM's directory named <NAME_OF_VM>.vbmc that contains the virtual BMC device description. An example of this file can be found in the [vbmcctl](https://github.com/roncterry/vbmcctl) project (vbmcctl.cfg.example). The **vbmcctl** command must be installed on the host machine for this functionality to work. 
 
 # ISO Images
 
@@ -226,12 +226,12 @@ backup_lab_env.sh <course_id> [<archive_format>]
 ```
 **Detailed Description**:
 
-By default VM archives are created using p7zip with the compression format of LZMA2. This can be overridden at the command line using the **<archive_format>**. The supported archive formats are:
+By default VM archives are created using p7zip with the compression format of LZMA. This can be overridden at the command line using the **<archive_format>**. The supported archive formats are:
 
 Archive Format | Description
 ------------ | -------------
-**7zma2** | p7zip with LZMA2 compression split into 2G files (default)
-**7z** | p7zip with LZMA compression split into 2G files
+**7zma2** | p7zip with LZMA2 compression split into 2G files
+**7z** | p7zip with LZMA compression split into 2G files (default)
 **7zcopy** | p7zip with no compression split into 2G files
 **tar** | tar archive with no compression and not split
 **tgz** | gzip compressed tar archive and not split
@@ -277,12 +277,12 @@ create-archive.sh <directory>[,<directory>,...] [<archive_format>]
 ```
 **Detailed Description**:
 
-By default archives are created using p7zip with the compression format of LZMA2. This can be overridden at the command line using the **<archive_format>**. The supported archive formats are:
+By default archives are created using p7zip with the compression format of LZMA. This can be overridden at the command line using the **<archive_format>**. The supported archive formats are:
 
 Archive Format | Description
 ------------ | -------------
-**7zma2** | p7zip with LZMA2 compression split into 2G files (default)
-**7z** | p7zip with LZMA compression split into 2G files
+**7zma2** | p7zip with LZMA2 compression split into 2G files
+**7z** | p7zip with LZMA compression split into 2G files (default)
 **7zcopy** | p7zip with no compression split into 2G files
 **tar** | tar archive with no compression and not split
 **tgz** | gzip compressed tar archive and not split
