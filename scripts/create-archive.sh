@@ -1,7 +1,7 @@
 #!/bin/bash
 #
-# version: 1.1.3
-# date: 20190812
+# version: 1.1.4
+# date: 20200512
 
 usage() {
   echo
@@ -61,6 +61,7 @@ esac
 for DIR in $(echo ${1} | tr , \ )
 do
   echo "---------------------------------------------------------------------"
+  DIR=$(echo ${DIR} | sed 's+/$++')
   if [ -e ${DIR} ]
   then
     echo "COMMAND: ${ARCHIVE_CMD} ${DIR}.${ARCHIVE_EXT} ${DIR}"
