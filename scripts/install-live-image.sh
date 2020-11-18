@@ -1,6 +1,6 @@
 #!/bin/bash
-# version: 3.0.1
-# date: 2019-03-06
+# version: 3.1.0
+# date: 2020-11-18
 
 ##############################################################################
 #                           Global Variables
@@ -55,18 +55,6 @@ then
   HOME_SIZE="100%"
 fi
 
-
-if [ -z ${ISO_MOUNT} ]
-then
-  if [ -d /livecd ]
-  then
-    ISO_MOUNT="/livecd"
-  elif [ -d /run/initramfs/live/LiveOS ]
-  then
-    ISO_MOUNT="/run/initramfs/live/LiveOS"
-  fi
-fi
-
 if [ -z ${SQUASH_MOUNT} ]
 then
   SQUASH_MOUNT="/tmp/squash_mount"
@@ -92,7 +80,14 @@ BLOCK_DEV_LIST="$(fdisk -l | grep "/dev" | sed 's/Disk //g' | awk '{ print $1 }'
 
 usage() {
   echo
-  echo "${0} <block_device> <image_file> [with_home] [force_msdos|force_gpt] [force_uefi|force_bios] [no_secureboot] [enable_cloudinit|disable_cloudinit] [force_rebuild_initrd]"
+  echo "USAGE: $(basename ${0}) <block_device> [<image_file>] [with_home] [force_msdos|force_gpt] [force_uefi|force_bios] [no_secureboot] [enable_cloudinit|disable_cloudinit] [force_rebuild_initrd]"
+  echo
+  echo "  <image_file> is the path to the Live ISO image you wish to install from."
+  echo
+  echo "  If <image_file> is not provided and you are booted into a Live image, the"
+  echo "  script will attempt to either find a Live ISO image in known locations or"
+  echo "  attempt to locate the squashfs image you are booted into and use that as"
+  echo "  the source image."
   echo
   echo "  Options:"
   echo "        with_home             Create a separate partition for /home"
@@ -104,8 +99,6 @@ usage() {
   echo "        disable_cloudinit     Disable cloud-init in the installed OS if enabled"
   echo "        enable_cloudinit      Enable cloud-init in the installed OS if disabled"
   echo "        force_rebuild_initrd  Force rebuilding of the initramfs after install"
-  echo
-  echo "  Available Disks: ${BLOCK_DEV_LIST}"
   echo
   echo "  Note: This command can be customized by exporting the following"
   echo "        environment variables:"
@@ -120,6 +113,13 @@ usage() {
   echo "                         own partition (default: 20GiB)"
   echo "        HOME_SIZE       -size of /home partition if \"with_home\" is"
   echo "                         supplied on the command line (default: 100%)"
+  echo
+  echo "  ==============================================================================="
+  echo "  Available Disks to Install To:"
+  echo
+  echo "   ${BLOCK_DEV_LIST}"
+  echo
+  echo "  -------------------------------------------------------------------------------"
   echo
 }
 
@@ -179,12 +179,12 @@ check_for_live_image() {
       then
         if [ -d /isofrom ]
         then
-          IMAGE="$(ls /isofrom/*.iso | head -n 1)"
+          ISO_IMAGE="$(ls /isofrom/*.iso | head -n 1)"
         elif [ -d /run/initramfs/isoscan ]
         then
-          IMAGE="$(ls /run/initramfs/isoscan/*.iso | head -n 1)"
+          ISO_IMAGE="$(ls /run/initramfs/isoscan/*.iso | head -n 1)"
         fi
-        #echo -e "${LTRED}IMAGE=${IMAGE}${NC}"
+        #echo -e "${LTRED}ISO_IMAGE=${ISO_IMAGE}${NC}"
       else
         case ${3} in
           with_home|force_uefi|force_bios|no_secureboot|force_msdos|force_gpt|disable_cloudinit|enable_cloudinit|force_rebuild_initrd)
@@ -192,15 +192,16 @@ check_for_live_image() {
             then
               if [ -d /isofrom ]
               then
-                IMAGE="$(ls /isofrom/*.iso | head -n 1)"
+                ISO_IMAGE="$(ls /isofrom/*.iso | head -n 1)"
               elif [ -d /run/initramfs/isoscan ]
               then
-                IMAGE="$(ls /run/initramfs/isoscan/*.iso | head -n 1)"
+                ISO_IMAGE="$(ls /run/initramfs/isoscan/*.iso | head -n 1)"
               fi
             else
               if [ -e ${4} ]
               then
-                IMAGE="${4}"
+                ISO_IMAGE="${4}"
+                ISO_MOUNT="/tmp/iso_mount"
               else
                 echo
                 echo -e "${LTRED}ERROR: The image file provided doesn't seem to exist. Exiting.${NC}"
@@ -212,7 +213,8 @@ check_for_live_image() {
           *)
             if [ -e ${3} ]
             then
-              IMAGE="${3}"
+              ISO_IMAGE="${3}"
+              ISO_MOUNT="/tmp/iso_mount"
             else
               echo
               echo -e "${LTRED}ERROR: The image file provided doesn't seem to exist. Exiting.${NC}"
@@ -228,15 +230,16 @@ check_for_live_image() {
       then
         if [ -d /isofrom ]
         then
-          IMAGE="$(ls /isofrom/*.iso | head -n 1)"
+          ISO_IMAGE="$(ls /isofrom/*.iso | head -n 1)"
         elif [ -d /run/initramfs/isoscan ]
         then
-          IMAGE="$(ls /run/initramfs/isoscan/*.iso | head -n 1)"
+          ISO_IMAGE="$(ls /run/initramfs/isoscan/*.iso | head -n 1)"
         fi
       else
         if [ -e ${2} ]
         then
-          IMAGE="${2}"
+          ISO_IMAGE="${2}"
+          ISO_MOUNT="/tmp/iso_mount"
         else
           echo
           echo -e "${LTRED}ERROR: The image file provided doesn't seem to exist. Exiting.${NC}"
@@ -244,9 +247,52 @@ check_for_live_image() {
           exit 1
         fi
       fi
-      #echo -e "${LTRED}IMAGE=${IMAGE}${NC}"
+      #echo -e "${LTRED}ISO_IMAGE=${ISO_IMAGE}${NC}"
     ;;
   esac
+
+  if [ -z ${ISO_MOUNT} ]
+  then
+    if [ -d /livecd ]
+    then
+      ISO_MOUNT="/livecd"
+    elif [ -d /run/initramfs/live/LiveOS ]
+    then
+      ISO_MOUNT="/run/initramfs/live/LiveOS"
+    fi
+  fi
+}
+
+check_for_squash_image() {
+  if ! [ -z ${ISO_IMAGE} ]
+  then
+    if [ -d ${ISO_MOUNT}/LiveOS ]
+    then
+      for FILE_ON_ISO in $(ls ${ISO_MOUNT}/LiveOS)
+      do
+        if file ${ISO_MOUNT}/LiveOS/${FILE_ON_ISO} | grep -q "Squashfs filesystem"
+        then
+          SQUASH_IMAGE=${ISO_MOUNT}/LiveOS/${FILE_ON_ISO}
+        fi
+      done
+    fi
+  else
+    for FILE_ON_ISO in $(ls ${ISO_MOUNT})
+    do
+      if [ -d ${ISO_MOUNT}/LiveOS ]
+      then
+        if file ${ISO_MOUNT}/LiveOS/${FILE_ON_ISO} | grep -q "Squashfs filesystem"
+        then
+          SQUASH_IMAGE=${ISO_MOUNT}/LiveOS/${FILE_ON_ISO}
+        fi
+      else
+        if file ${ISO_MOUNT}/${FILE_ON_ISO} | grep -q "Squashfs filesystem"
+        then
+          SQUASH_IMAGE=${ISO_MOUNT}/${FILE_ON_ISO}
+        fi
+      fi
+  done
+  fi
 }
 
 check_for_uefi() {
@@ -973,21 +1019,19 @@ copy_live_filesystem_to_disk() {
   echo -e "${LTBLUE}==============================================================${NC}"
   echo
 
-  for FILE_ON_ISO in $(ls ${ISO_MOUNT})
-  do
-    if [ -d ${ISO_MOUNT}/LiveOS ]
-    then
-      if file ${ISO_MOUNT}/LiveOS/${FILE_ON_ISO} | grep -q "Squashfs filesystem"
-      then
-        SQUASH_IMAGE=${ISO_MOUNT}/LiveOS/${FILE_ON_ISO}
-      fi
-    else
-      if file ${ISO_MOUNT}/${FILE_ON_ISO} | grep -q "Squashfs filesystem"
-      then
-        SQUASH_IMAGE=${ISO_MOUNT}/${FILE_ON_ISO}
-      fi
-    fi
-  done
+  echo -e "${ORANGE}[ Mounting Source Images ]${NC}"
+  if ! [ -z ${ISO_IMAGE} ]
+  then
+    echo -e "${LTPURPLE}  ISO_IMAGE=${GRAY}${ISO_IMAGE}${NC}"
+    echo -e "${LTCYAN}  -Mounting ISO Image ...${NC}"
+    echo -e "${LTGREEN}  COMMAND:${GRAY} mkdir ${ISO_MOUNT}${NC}"
+    mkdir ${ISO_MOUNT}
+    echo -e "${LTGREEN}  COMMAND:${GRAY} mount ${ISO_IMAGE} ${ISO_MOUNT}${NC}"
+    mount -o loop ${ISO_IMAGE} ${ISO_MOUNT}
+    echo
+  fi
+
+  check_for_squash_image
 
   echo -e "${LTPURPLE}  SQUASH_IMAGE=${GRAY}${SQUASH_IMAGE}${NC}"
 
@@ -1022,6 +1066,7 @@ copy_live_filesystem_to_disk() {
       echo
     fi
 
+    echo -e "${ORANGE}[ Mounting Destination Partition(s) ]${NC}"
     echo -e "${LTCYAN}  -Mounting Root Partition ...${NC}"
     echo -e "${LTGREEN}  COMMAND:${GRAY} mkdir ${ROOT_MOUNT}${NC}"
     mkdir ${ROOT_MOUNT}
@@ -1051,6 +1096,7 @@ copy_live_filesystem_to_disk() {
       ;;
     esac
 
+    echo -e "${ORANGE}[ Installing OS Image ]${NC}"
     echo -e "${LTCYAN}  -Copying filesystem to root partition (this may take a while) ...${NC}"
     #echo -e "${LTGREEN}  COMMAND:${GRAY} rsync -ah --progress ${SQUASH_MOUNT}/* ${ROOT_MOUNT}/${NC}"
     #rsync -ah --progress ${SQUASH_MOUNT}/* ${ROOT_MOUNT}/
@@ -1183,12 +1229,7 @@ copy_live_filesystem_to_disk() {
       ;;
     esac
 
-    #echo -e "${LTCYAN}  -Copying in installer script ...${NC}"
-    #echo -e "${LTGREEN}  COMMAND:${GRAY} cp ${0} ${ROOT_MOUNT}/usr/local/bin/${NC}"
-    #cp ${0} ${ROOT_MOUNT}/usr/local/bin/
-    #echo -e "${LTGREEN}  COMMAND:${GRAY} chmod +x ${ROOT_MOUNT}/usr/local/bin/install-live-image.sh${NC}"
-    #chmod +x ${ROOT_MOUNT}/usr/local/bin/install-live-image.sh
-
+    echo -e "${ORANGE}[ Unmounting Destination Partition(s) ]${NC}"
     echo -e "${LTCYAN}  -Unmounting dev,proc,sys Filesystems ...${NC}"
     echo -e "${LTGREEN}  COMMAND:${GRAY} umount -R ${ROOT_MOUNT}/proc${NC}"
     umount -R ${ROOT_MOUNT}/proc
@@ -1207,6 +1248,15 @@ copy_live_filesystem_to_disk() {
       ;;
     esac
 
+    echo -e "${LTCYAN}  -Unmounting Root Partition ...${NC}"
+    echo -e "${LTGREEN}  COMMAND:${GRAY} umount -R ${ROOT_MOUNT}${NC}"
+    umount -R ${ROOT_MOUNT}
+    sleep 2
+    echo -e "${LTGREEN}  COMMAND:${GRAY} rmdir ${ROOT_MOUNT}${NC}"
+    rmdir ${ROOT_MOUNT}
+    echo
+
+    echo -e "${ORANGE}[ Unmounting Source Images ]${NC}"
     if ! [ -z ${SQUASH_ROOT_IMAGE} ]
     then
       echo -e "${LTCYAN}  -Unmounting Root Image in Squashfs ...${NC}"
@@ -1227,6 +1277,16 @@ copy_live_filesystem_to_disk() {
       umount ${SQUASH_IMAGE}
       echo -e "${LTGREEN}  COMMAND:${GRAY} rmdir ${SQUASH_MOUNT}${NC}"
       rmdir ${SQUASH_MOUNT}
+      echo
+    fi
+
+    if ! [ -z ${ISO_IMAGE} ]
+    then
+      echo -e "${LTCYAN}  -Unmounting ISO Image ...${NC}"
+      echo -e "${LTGREEN}  COMMAND:${GRAY} umount ${ISO_MOUNT}${NC}"
+      umount ${ISO_MOUNT}
+      echo -e "${LTGREEN}  COMMAND:${GRAY} rmdir ${ISO_MOUNT}${NC}"
+      rmdir ${ISO_MOUNT}
       echo
     fi
 
@@ -1455,6 +1515,18 @@ main() {
   #-- check to see if the live image was supplied or detected
   check_for_live_image $*
 
+  if [ -z ${ISO_IMAGE} ]
+  then
+    check_for_squash_image $*
+
+    if [ -z ${SQUASH_IMAGE} ]
+    then
+      echo -e "${LTRED}ERROR: Source image not found. Exiting.${NC}"
+      echo
+      exit 99
+    fi
+  fi
+
   #--  check to see if we need to create a home partition
   check_for_create_home_partition $*
 
@@ -1491,34 +1563,43 @@ main() {
   echo -e "${LTPURPLE}=========================================================================${NC}"
   if ! [ -z ${ORIG_DISK_DEV} ]
   then
-	  echo -e "${LTPURPLE}Disk Device:      ${GRAY}${ORIG_DISK_DEV} ${LTPURPLE}(using MPIO Disk Device)${NC}"
-    echo -e "${LTPURPLE}MPIO Disk Device: ${GRAY}${DISK_DEV}${NC}"
+	  echo -e "${LTPURPLE}Disk Device:       ${GRAY}${ORIG_DISK_DEV} ${LTPURPLE}(using MPIO Disk Device)${NC}"
+    echo -e "${LTPURPLE}MPIO Disk Device:  ${GRAY}${DISK_DEV}${NC}"
   else
-    echo -e "${LTPURPLE}Disk Device:      ${GRAY}${DISK_DEV}${NC}"
+    echo -e "${LTPURPLE}Disk Device:       ${GRAY}${DISK_DEV}${NC}"
   fi
-  echo -e "${LTPURPLE}Live Image:       ${GRAY}${IMAGE}${NC}"
+  if ! [ -z ${ISO_IMAGE} ]
+  then
+    echo -e "${LTPURPLE}Live Image:        ${GRAY}${ISO_IMAGE}${NC}"
+    echo -e "${LTPURPLE}ISO Mounted on:    ${GRAY}${ISO_MOUNT}${NC}"
+    echo -e "${LTPURPLE}Squash Mounted on: ${GRAY}${SQUASH_MOUNT}${NC}"
+  else
+    echo -e "${LTPURPLE}Squash Image:      ${GRAY}${SQUASH_IMAGE}${NC}"
+    #echo -e "${LTPURPLE}ISO Mounted on:    ${GRAY}${ISO_MOUNT}${NC}"
+    echo -e "${LTPURPLE}Squash Mounted on: ${GRAY}${SQUASH_MOUNT}${NC}"
+  fi
 
-  echo -e "${LTPURPLE}Bootloader:       ${GRAY}${BOOTLOADER}${NC}"
+  echo -e "${LTPURPLE}Bootloader:        ${GRAY}${BOOTLOADER}${NC}"
   case ${BOOTLOADER} in
     UEFI)
       case ${SECURE_BOOT} in
         Y)
-          echo -e "${LTPURPLE}Secure Boot:      ${GRAY}Yes${NC}"
+          echo -e "${LTPURPLE}Secure Boot:       ${GRAY}Yes${NC}"
         ;;
         N)
-          echo -e "${LTPURPLE}Secure Boot:      ${GRAY}No${NC}"
+          echo -e "${LTPURPLE}Secure Boot:       ${GRAY}No${NC}"
         ;;
       esac
     ;;
   esac
 
-  echo -e "${LTPURPLE}Partition Table:  ${GRAY}${PARTITION_TABLE_TYPE}${NC}"
+  echo -e "${LTPURPLE}Partition Table:   ${GRAY}${PARTITION_TABLE_TYPE}${NC}"
   case ${CREATE_HOME_PART} in
     Y)
-      echo -e "${LTPURPLE}Create /home:     ${GRAY}Yes${NC}"
+      echo -e "${LTPURPLE}Create /home:      ${GRAY}Yes${NC}"
     ;;
     N)
-      echo -e "${LTPURPLE}Create /home:     ${GRAY}No${NC}"
+      echo -e "${LTPURPLE}Create /home:      ${GRAY}No${NC}"
     ;;
   esac
   echo -e "${LTPURPLE}--------------------------------------------${NC}"
