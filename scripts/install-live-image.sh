@@ -1,6 +1,6 @@
 #!/bin/bash
-# version: 3.3.0
-# date: 2021-03-11
+# version: 3.4.0
+# date: 2021-07-16
 
 ##############################################################################
 #                           Global Variables
@@ -51,7 +51,7 @@ fi
 
 if [ -z ${ROOT2_SIZE} ]
 then
-  ROOT2_SIZE="20GiB"
+  ROOT2_SIZE="30GiB"
 fi
 
 if [ -z ${HOME_SIZE} ]
@@ -472,9 +472,11 @@ check_for_root_fs_type() {
       ROOT_MKFS_OPTS="-f"
       ROOT_FSTAB_OPTS="defaults"
     ;;
-    #btrfs)
-    #  ROOT_MKFS_OPTS="-f"
-    #;;
+    btrfs)
+      ROOT_MKFS_OPTS="-f"
+      ROOT_FSTAB_OPTS="defaults"
+      BTRFS_DEFAULT_SUBVOLUMES="/var /usr/local /tmp /srv /root /opt /home /boot/grub2/x8_4-efi /boot/grub2/i386-pc /.snapshots"
+    ;;
     *)
       echo
       echo -e "${LTRED}ERROR: \"${ROOT_FS_TYPE}\" is not a supported filesystem type for the root filesystem. Exiting."${NC}
@@ -530,6 +532,7 @@ check_for_create_home_partition() {
       ;;
       #btrfs)
       #  HOME_MKFS_OPTS="-f"
+      #  HOME_FSTAB_OPTS="defaults"
       #;;
       *)
         echo
@@ -651,6 +654,134 @@ remove_partitions() {
   fi
 }
 
+create_root_fs() {
+  echo -e "${LTBLUE}==============================================================${NC}"
+  echo -e "${LTBLUE}Creating filesystem on root partition${NC}"
+  echo -e "${LTBLUE}==============================================================${NC}"
+  echo
+  case ${ROOT_FS_TYPE} in
+    ext4|xfs)
+      if echo ${DISK_DEV} | grep -q nvme
+      then
+        echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.${ROOT_FS_TYPE} ${ROOT_MKFS_OPTS} -L ROOT ${DISK_DEV}p${ROOT_PART_NUM}${NC}"
+        mkfs.${ROOT_FS_TYPE} ${ROOT_MKFS_OPTS} -L ROOT ${DISK_DEV}p${ROOT_PART_NUM}
+        ROOT_PART=${DISK_DEV}p${ROOT_PART_NUM}
+      elif echo ${DISK_DEV} | grep -q "/dev/mapper"
+      then
+        echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.${ROOT_FS_TYPE} ${ROOT_MKFS_OPTS} -L ROOT ${DISK_DEV}-part${ROOT_PART_NUM}${NC}"
+        mkfs.${ROOT_FS_TYPE} ${ROOT_MKFS_OPTS} -L ROOT ${DISK_DEV}-part${ROOT_PART_NUM}
+        ROOT_PART=${DISK_DEV}-part${ROOT_PART_NUM}
+      else
+        echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.${ROOT_FS_TYPE} ${ROOT_MKFS_OPTS} -L ROOT ${DISK_DEV}${ROOT_PART_NUM}${NC}"
+        mkfs.${ROOT_FS_TYPE} ${ROOT_MKFS_OPTS} -L ROOT ${DISK_DEV}${ROOT_PART_NUM}
+        ROOT_PART=${DISK_DEV}${ROOT_PART_NUM}
+      fi
+    ;;
+    btrfs)
+      if echo ${DISK_DEV} | grep -q nvme
+      then
+        echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.${ROOT_FS_TYPE} ${ROOT_MKFS_OPTS} -L ROOT ${DISK_DEV}p${ROOT_PART_NUM}${NC}"
+        mkfs.${ROOT_FS_TYPE} ${ROOT_MKFS_OPTS} -L ROOT ${DISK_DEV}p${ROOT_PART_NUM}
+        ROOT_PART=${DISK_DEV}p${ROOT_PART_NUM}
+      elif echo ${DISK_DEV} | grep -q "/dev/mapper"
+      then
+        echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.${ROOT_FS_TYPE} ${ROOT_MKFS_OPTS} -L ROOT ${DISK_DEV}-part${ROOT_PART_NUM}${NC}"
+        mkfs.${ROOT_FS_TYPE} ${ROOT_MKFS_OPTS} -L ROOT ${DISK_DEV}-part${ROOT_PART_NUM}
+        ROOT_PART=${DISK_DEV}-part${ROOT_PART_NUM}
+      else
+        echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.${ROOT_FS_TYPE} ${ROOT_MKFS_OPTS} -L ROOT ${DISK_DEV}${ROOT_PART_NUM}${NC}"
+        mkfs.${ROOT_FS_TYPE} ${ROOT_MKFS_OPTS} -L ROOT ${DISK_DEV}${ROOT_PART_NUM}
+        ROOT_PART=${DISK_DEV}${ROOT_PART_NUM}
+      fi
+
+      local BTRFS_ROOT_TMP="/tmp/btrfs_root_tmp"
+      echo -e "${LTGREEN}COMMAND:${GRAY} mkdir -p ${BTRFS_ROOT_TMP}${NC}"
+      mkdir -p ${BTRFS_ROOT_TMP}
+      echo -e "${LTGREEN}COMMAND:${GRAY} mount ${ROOT_PART} ${BTRFS_ROOT_TMP}${NC}"
+      mount ${ROOT_PART} ${BTRFS_ROOT_TMP}
+      for SUBVOL in ${BTRFS_DEFAULT_SUBVOLUMES}
+      do
+        echo -e "${LTGREEN}COMMAND:${GRAY} btrfs subvolume create ${BTRFS_ROOT_TMP}${SUBVOL}${NC}"
+        btrfs subvolume create ${BTRFS_ROOT_TMP}${SUBVOL}
+      done
+      echo -e "${LTGREEN}COMMAND:${GRAY} umount ${ROOT_PART} ${BTRFS_ROOT_TMP}${NC}"
+      umount ${ROOT_PART} ${BTRFS_ROOT_TMP}
+      echo -e "${LTGREEN}COMMAND:${GRAY} rm -rf  -p ${BTRFS_ROOT_TMP}${NC}"
+      rm -rf  -p ${BTRFS_ROOT_TMP}
+    ;;
+  esac
+}
+
+create_home_fs() {
+  echo -e "${LTBLUE}==============================================================${NC}"
+  echo -e "${LTBLUE}Creating filesystem on home partition${NC}"
+  echo -e "${LTBLUE}==============================================================${NC}"
+  echo
+  case ${HOME_FS_TYPE} in
+    ext4|xfs)
+      if echo ${DISK_DEV} | grep -q nvme
+      then
+        echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.${HOME_FS_TYPE} ${HOME_MKFS_OPTS} -L HOME ${DISK_DEV}p${HOME_PART_NUM}${NC}"
+        mkfs.${HOME_FS_TYPE} ${HOME_MKFS_OPTS} -L HOME ${DISK_DEV}p${HOME_PART_NUM}
+        HOME_PART=${DISK_DEV}p${HOME_PART_NUM}
+      elif echo ${DISK_DEV} | grep -q "/dev/mapper"
+      then
+        echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.${HOME_FS_TYPE} ${HOME_MKFS_OPTS} -L HOME ${DISK_DEV}-part${HOME_PART_NUM}${NC}"
+        mkfs.${HOME_FS_TYPE} ${HOME_MKFS_OPTS} -L HOME ${DISK_DEV}-part${HOME_PART_NUM}
+        HOME_PART=${DISK_DEV}-part${HOME_PART_NUM}
+      else
+        echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.${HOME_FS_TYPE} ${HOME_MKFS_OPTS} -L HOME ${DISK_DEV}${HOME_PART_NUM}${NC}"
+        mkfs.${HOME_FS_TYPE} ${HOME_MKFS_OPTS} -L HOME ${DISK_DEV}${HOME_PART_NUM}
+        HOME_PART=${DISK_DEV}${HOME_PART_NUM}
+      fi
+    ;;
+  esac
+}
+
+create_swap_fs() {
+  echo -e "${LTBLUE}==============================================================${NC}"
+  echo -e "${LTBLUE}Creating Swap filesystem on swap partition${NC}"
+  echo -e "${LTBLUE}==============================================================${NC}"
+  echo
+  if echo ${DISK_DEV} | grep -q nvme
+  then
+    echo -e "${LTGREEN}COMMAND:${GRAY} mkswap ${DISK_DEV}p${SWAP_PART_NUM}${NC}"
+    mkswap ${DISK_DEV}p${SWAP_PART_NUM}
+    SWAP_PART=${DISK_DEV}p${SWAP_PART_NUM}
+  elif echo ${DISK_DEV} | grep -q "/dev/mapper"
+  then
+    echo -e "${LTGREEN}COMMAND:${GRAY} mkswap ${DISK_DEV}-part${SWAP_PART_NUM}${NC}"
+    mkswap ${DISK_DEV}-part${SWAP_PART_NUM}
+    SWAP_PART=${DISK_DEV}-part${SWAP_PART_NUM}
+  else
+    echo -e "${LTGREEN}COMMAND:${GRAY} mkswap ${DISK_DEV}${SWAP_PART_NUM}${NC}"
+    mkswap ${DISK_DEV}${SWAP_PART_NUM}
+    SWAP_PART=${DISK_DEV}${SWAP_PART_NUM}
+  fi
+}
+
+create_boot_efi_fs() {
+  echo -e "${LTBLUE}==============================================================${NC}"
+  echo -e "${LTBLUE}Creating vfat filesystem on boot/efi partition${NC}"
+  echo -e "${LTBLUE}==============================================================${NC}"
+  echo
+  if echo ${DISK_DEV} | grep -q nvme
+  then
+    echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.vfat -F 32 -n EFI ${DISK_DEV}p${BOOTEFI_PART_NUM}${NC}"
+    mkfs.vfat -F 32 -n EFI ${DISK_DEV}p${BOOTEFI_PART_NUM}
+    BOOTEFI_PART=${DISK_DEV}p${BOOTEFI_PART_NUM}
+  elif echo ${DISK_DEV} | grep -q "/dev/mapper"
+  then
+    echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.vfat -F 32 -n EFI ${DISK_DEV}-part${BOOTEFI_PART_NUM}${NC}"
+    mkfs.vfat -F 32 -n EFI ${DISK_DEV}-part${BOOTEFI_PART_NUM}
+    BOOTEFI_PART=${DISK_DEV}-part${BOOTEFI_PART_NUM}
+  else
+    echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.vfat -F 32 -n EFI ${DISK_DEV}${BOOTEFI_PART_NUM}${NC}"
+    mkfs.vfat -F 32 -n EFI ${DISK_DEV}${BOOTEFI_PART_NUM}
+    BOOTEFI_PART=${DISK_DEV}${BOOTEFI_PART_NUM}
+  fi
+}
+
 ###########################################################################################################
 #####################                   BIOS Boot Functions              ##################################
 ###########################################################################################################
@@ -739,51 +870,10 @@ create_single_partition_with_swap_bios_boot() {
   echo
   sleep 2
 
-  echo -e "${LTBLUE}==============================================================${NC}"
-  echo -e "${LTBLUE}Creating Swap filesystem on swap partition${NC}"
-  echo -e "${LTBLUE}==============================================================${NC}"
+  create_swap_fs
   echo
-  if echo ${DISK_DEV} | grep -q nvme
-  then
-    echo -e "${LTGREEN}COMMAND:${GRAY} mkswap ${DISK_DEV}p${SWAP_PART_NUM}${NC}"
-    mkswap ${DISK_DEV}p${SWAP_PART_NUM}
-    SWAP_PART=${DISK_DEV}p${SWAP_PART_NUM}
-  elif echo ${DISK_DEV} | grep -q "/dev/mapper"
-  then
-    echo -e "${LTGREEN}COMMAND:${GRAY} mkswap ${DISK_DEV}-part${SWAP_PART_NUM}${NC}"
-    mkswap ${DISK_DEV}-part${SWAP_PART_NUM}
-    SWAP_PART=${DISK_DEV}-part${SWAP_PART_NUM}
-  else
-    echo -e "${LTGREEN}COMMAND:${GRAY} mkswap ${DISK_DEV}${SWAP_PART_NUM}${NC}"
-    mkswap ${DISK_DEV}${SWAP_PART_NUM}
-    SWAP_PART=${DISK_DEV}${SWAP_PART_NUM}
-  fi
+  create_root_fs
   echo
-
-  case ${ROOT_FS_TYPE} in
-    ext4|xfs)
-      echo -e "${LTBLUE}==============================================================${NC}"
-      echo -e "${LTBLUE}Creating filesystem on root partition${NC}"
-      echo -e "${LTBLUE}==============================================================${NC}"
-      echo
-      if echo ${DISK_DEV} | grep -q nvme
-      then
-        echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.${ROOT_FS_TYPE} ${ROOT_MKFS_OPTS} -L ROOT ${DISK_DEV}p${ROOT_PART_NUM}${NC}"
-        mkfs.${ROOT_FS_TYPE} ${ROOT_MKFS_OPTS} -L ROOT ${DISK_DEV}p${ROOT_PART_NUM}
-        ROOT_PART=${DISK_DEV}p${ROOT_PART_NUM}
-      elif echo ${DISK_DEV} | grep -q "/dev/mapper"
-      then
-        echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.${ROOT_FS_TYPE} ${ROOT_MKFS_OPTS} -L ROOT ${DISK_DEV}-part${ROOT_PART_NUM}${NC}"
-        mkfs.${ROOT_FS_TYPE} ${ROOT_MKFS_OPTS} -L ROOT ${DISK_DEV}-part${ROOT_PART_NUM}
-        ROOT_PART=${DISK_DEV}-part${ROOT_PART_NUM}
-      else
-        echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.${ROOT_FS_TYPE} ${ROOT_MKFS_OPTS} -L ROOT ${DISK_DEV}${ROOT_PART_NUM}${NC}"
-        mkfs.${ROOT_FS_TYPE} ${ROOT_MKFS_OPTS} -L ROOT ${DISK_DEV}${ROOT_PART_NUM}
-        ROOT_PART=${DISK_DEV}${ROOT_PART_NUM}
-      fi
-    ;;
-  esac
-  #echo
 }
 
 create_two_partitions_with_swap_bios_boot() {
@@ -884,77 +974,11 @@ create_two_partitions_with_swap_bios_boot() {
   echo
   sleep 2
 
-  echo -e "${LTBLUE}==============================================================${NC}"
-  echo -e "${LTBLUE}Creating Swap filesystem on swap partition${NC}"
-  echo -e "${LTBLUE}==============================================================${NC}"
+  create_swap_fs
   echo
-  if echo ${DISK_DEV} | grep -q nvme
-  then
-    echo -e "${LTGREEN}COMMAND:${GRAY} mkswap ${DISK_DEV}p${SWAP_PART_NUM}${NC}"
-    mkswap ${DISK_DEV}p${SWAP_PART_NUM}
-    SWAP_PART=${DISK_DEV}p${SWAP_PART_NUM}
-  elif echo ${DISK_DEV} | grep -q "/dev/mapper"
-  then
-    echo -e "${LTGREEN}COMMAND:${GRAY} mkswap ${DISK_DEV}-part${SWAP_PART_NUM}${NC}"
-    mkswap ${DISK_DEV}-part${SWAP_PART_NUM}
-    SWAP_PART=${DISK_DEV}-part${SWAP_PART_NUM}
-  else
-    echo -e "${LTGREEN}COMMAND:${GRAY} mkswap ${DISK_DEV}${SWAP_PART_NUM}${NC}"
-    mkswap ${DISK_DEV}${SWAP_PART_NUM}
-    SWAP_PART=${DISK_DEV}${SWAP_PART_NUM}
-  fi
+  create_root_fs
   echo
-
-  case ${ROOT_FS_TYPE} in
-    ext4|xfs)
-      echo -e "${LTBLUE}==============================================================${NC}"
-      echo -e "${LTBLUE}Creating filesystem on root partition${NC}"
-      echo -e "${LTBLUE}==============================================================${NC}"
-      echo
-      if echo ${DISK_DEV} | grep -q nvme
-      then
-        echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.${ROOT_FS_TYPE} ${ROOT_MKFS_OPTS} -L ROOT ${DISK_DEV}p${ROOT_PART_NUM}${NC}"
-        mkfs.${ROOT_FS_TYPE} ${ROOT_MKFS_OPTS} -L ROOT ${DISK_DEV}p${ROOT_PART_NUM}
-        ROOT_PART=${DISK_DEV}p${ROOT_PART_NUM}
-      elif echo ${DISK_DEV} | grep -q "/dev/mapper"
-      then
-        echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.${ROOT_FS_TYPE} ${ROOT_MKFS_OPTS} -L ROOT ${DISK_DEV}-part${ROOT_PART_NUM}${NC}"
-        mkfs.${ROOT_FS_TYPE} ${ROOT_MKFS_OPTS} -L ROOT ${DISK_DEV}-part${ROOT_PART_NUM}
-        ROOT_PART=${DISK_DEV}-part${ROOT_PART_NUM}
-      else
-        echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.${ROOT_FS_TYPE} ${ROOT_MKFS_OPTS} -L ROOT ${DISK_DEV}${ROOT_PART_NUM}${NC}"
-        mkfs.${ROOT_FS_TYPE} ${ROOT_MKFS_OPTS} -L ROOT ${DISK_DEV}${ROOT_PART_NUM}
-        ROOT_PART=${DISK_DEV}${ROOT_PART_NUM}
-      fi
-    ;;
-  esac
-  #echo
-
-  case ${HOME_FS_TYPE} in
-    ext4|xfs)
-      echo -e "${LTBLUE}==============================================================${NC}"
-      echo -e "${LTBLUE}Creating filesystem on home partition${NC}"
-      echo -e "${LTBLUE}==============================================================${NC}"
-      echo
-      if echo ${DISK_DEV} | grep -q nvme
-      then
-        echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.${HOME_FS_TYPE} ${HOME_MKFS_OPTS} -L HOME ${DISK_DEV}p${HOME_PART_NUM}${NC}"
-        mkfs.${HOME_FS_TYPE} ${HOME_MKFS_OPTS} -L HOME ${DISK_DEV}p${HOME_PART_NUM}
-        HOME_PART=${DISK_DEV}p${HOME_PART_NUM}
-      elif echo ${DISK_DEV} | grep -q "/dev/mapper"
-      then
-        echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.${HOME_FS_TYPE} ${HOME_MKFS_OPTS} -L HOME ${DISK_DEV}-part${HOME_PART_NUM}${NC}"
-        mkfs.${HOME_FS_TYPE} ${HOME_MKFS_OPTS} -L HOME ${DISK_DEV}-part${HOME_PART_NUM}
-        HOME_PART=${DISK_DEV}-part${HOME_PART_NUM}
-      else
-        echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.${HOME_FS_TYPE} ${HOME_MKFS_OPTS} -L HOME ${DISK_DEV}${HOME_PART_NUM}${NC}"
-        mkfs.${HOME_FS_TYPE} ${HOME_MKFS_OPTS} -L HOME ${DISK_DEV}${HOME_PART_NUM}
-        HOME_PART=${DISK_DEV}${HOME_PART_NUM}
-      fi
-    ;;
-  esac
-  #echo
-
+  create_home_fs
   echo
 }
 
@@ -1019,71 +1043,12 @@ create_single_partition_with_swap_uefi_boot() {
   echo
   sleep 2
 
-  echo -e "${LTBLUE}==============================================================${NC}"
-  echo -e "${LTBLUE}Creating vfat filesystem on boot/efi partition${NC}"
-  echo -e "${LTBLUE}==============================================================${NC}"
+  create_boot_efi_fs
   echo
-  if echo ${DISK_DEV} | grep -q nvme
-  then
-    echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.vfat -F 32 -n EFI ${DISK_DEV}p${BOOTEFI_PART_NUM}${NC}"
-    mkfs.vfat -F 32 -n EFI ${DISK_DEV}p${BOOTEFI_PART_NUM}
-    BOOTEFI_PART=${DISK_DEV}p${BOOTEFI_PART_NUM}
-  elif echo ${DISK_DEV} | grep -q "/dev/mapper"
-  then
-    echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.vfat -F 32 -n EFI ${DISK_DEV}-part${BOOTEFI_PART_NUM}${NC}"
-    mkfs.vfat -F 32 -n EFI ${DISK_DEV}-part${BOOTEFI_PART_NUM}
-    BOOTEFI_PART=${DISK_DEV}-part${BOOTEFI_PART_NUM}
-  else
-    echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.vfat -F 32 -n EFI ${DISK_DEV}${BOOTEFI_PART_NUM}${NC}"
-    mkfs.vfat -F 32 -n EFI ${DISK_DEV}${BOOTEFI_PART_NUM}
-    BOOTEFI_PART=${DISK_DEV}${BOOTEFI_PART_NUM}
-  fi
-
-  echo -e "${LTBLUE}==============================================================${NC}"
-  echo -e "${LTBLUE}Creating Swap filesystem on swap partition${NC}"
-  echo -e "${LTBLUE}==============================================================${NC}"
+  create_swap_fs
   echo
-  if echo ${DISK_DEV} | grep -q nvme
-  then
-    echo -e "${LTGREEN}COMMAND:${GRAY} mkswap ${DISK_DEV}p${SWAP_PART_NUM}${NC}"
-    mkswap ${DISK_DEV}p${SWAP_PART_NUM}
-    SWAP_PART=${DISK_DEV}p${SWAP_PART_NUM}
-  elif echo ${DISK_DEV} | grep -q "/dev/mapper"
-  then
-    echo -e "${LTGREEN}COMMAND:${GRAY} mkswap ${DISK_DEV}-part${SWAP_PART_NUM}${NC}"
-    mkswap ${DISK_DEV}-part${SWAP_PART_NUM}
-    SWAP_PART=${DISK_DEV}-part${SWAP_PART_NUM}
-  else
-    echo -e "${LTGREEN}COMMAND:${GRAY} mkswap ${DISK_DEV}${SWAP_PART_NUM}${NC}"
-    mkswap ${DISK_DEV}${SWAP_PART_NUM}
-    SWAP_PART=${DISK_DEV}${SWAP_PART_NUM}
-  fi
+  create_root_fs
   echo
-
-  case ${ROOT_FS_TYPE} in
-    ext4|xfs)
-      echo -e "${LTBLUE}==============================================================${NC}"
-      echo -e "${LTBLUE}Creating filesystem on root partition${NC}"
-      echo -e "${LTBLUE}==============================================================${NC}"
-      echo
-      if echo ${DISK_DEV} | grep -q nvme
-      then
-        echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.${ROOT_FS_TYPE} ${ROOT_MKFS_OPTS} -L ROOT ${DISK_DEV}p${ROOT_PART_NUM}${NC}"
-        mkfs.${ROOT_FS_TYPE} ${ROOT_MKFS_OPTS} -L ROOT ${DISK_DEV}p${ROOT_PART_NUM}
-        ROOT_PART=${DISK_DEV}p${ROOT_PART_NUM}
-      elif echo ${DISK_DEV} | grep -q "/dev/mapper"
-      then
-        echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.${ROOT_FS_TYPE} ${ROOT_MKFS_OPTS} -L ROOT ${DISK_DEV}-part${ROOT_PART_NUM}${NC}"
-        mkfs.${ROOT_FS_TYPE} ${ROOT_MKFS_OPTS} -L ROOT ${DISK_DEV}-part${ROOT_PART_NUM}
-        ROOT_PART=${DISK_DEV}-part${ROOT_PART_NUM}
-      else
-        echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.${ROOT_FS_TYPE} ${ROOT_MKFS_OPTS} -L ROOT ${DISK_DEV}${ROOT_PART_NUM}${NC}"
-        mkfs.${ROOT_FS_TYPE} ${ROOT_MKFS_OPTS} -L ROOT ${DISK_DEV}${ROOT_PART_NUM}
-        ROOT_PART=${DISK_DEV}${ROOT_PART_NUM}
-      fi
-    ;;
-  esac
-  #echo
 }
 
 create_two_partitions_with_swap_uefi_boot() {
@@ -1145,97 +1110,13 @@ create_two_partitions_with_swap_uefi_boot() {
   echo
   sleep 2
 
-  echo -e "${LTBLUE}==============================================================${NC}"
-  echo -e "${LTBLUE}Creating vfat filesystem on boot/efi partition${NC}"
-  echo -e "${LTBLUE}==============================================================${NC}"
+  create_boot_efi_fs
   echo
-  if echo ${DISK_DEV} | grep -q nvme
-  then
-    echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.vfat -F 32 -n EFI ${DISK_DEV}p${BOOTEFI_PART_NUM}${NC}"
-    mkfs.vfat -F 32 -n EFI ${DISK_DEV}p${BOOTEFI_PART_NUM}
-    BOOTEFI_PART=${DISK_DEV}p${BOOTEFI_PART_NUM}
-  elif echo ${DISK_DEV} | grep -q "/dev/mapper"
-  then
-    echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.vfat -F 32 -n EFI ${DISK_DEV}-part${BOOTEFI_PART_NUM}${NC}"
-    mkfs.vfat -F 32 -n EFI ${DISK_DEV}-part${BOOTEFI_PART_NUM}
-    BOOTEFI_PART=${DISK_DEV}-part${BOOTEFI_PART_NUM}
-  else
-    echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.vfat -F 32 -n EFI ${DISK_DEV}${BOOTEFI_PART_NUM}${NC}"
-    mkfs.vfat -F 32 -n EFI ${DISK_DEV}${BOOTEFI_PART_NUM}
-    BOOTEFI_PART=${DISK_DEV}${BOOTEFI_PART_NUM}
-  fi
-
-  echo -e "${LTBLUE}==============================================================${NC}"
-  echo -e "${LTBLUE}Creating Swap filesystem on swap partition${NC}"
-  echo -e "${LTBLUE}==============================================================${NC}"
+  create_swap_fs
   echo
-  if echo ${DISK_DEV} | grep -q nvme
-  then
-    echo -e "${LTGREEN}COMMAND:${GRAY} mkswap ${DISK_DEV}p${SWAP_PART_NUM}${NC}"
-    mkswap ${DISK_DEV}p${SWAP_PART_NUM}
-    SWAP_PART=${DISK_DEV}p${SWAP_PART_NUM}
-  elif echo ${DISK_DEV} | grep -q "/dev/mapper"
-  then
-    echo -e "${LTGREEN}COMMAND:${GRAY} mkswap ${DISK_DEV}-part${SWAP_PART_NUM}${NC}"
-    mkswap ${DISK_DEV}-part${SWAP_PART_NUM}
-    SWAP_PART=${DISK_DEV}-part${SWAP_PART_NUM}
-  else
-    echo -e "${LTGREEN}COMMAND:${GRAY} mkswap ${DISK_DEV}${SWAP_PART_NUM}${NC}"
-    mkswap ${DISK_DEV}${SWAP_PART_NUM}
-    SWAP_PART=${DISK_DEV}${SWAP_PART_NUM}
-  fi
+  create_root_fs
   echo
-
-  case ${ROOT_FS_TYPE} in
-    ext4|xfs)
-      echo -e "${LTBLUE}==============================================================${NC}"
-      echo -e "${LTBLUE}Creating filesystem on root partition${NC}"
-      echo -e "${LTBLUE}==============================================================${NC}"
-      echo
-      if echo ${DISK_DEV} | grep -q nvme
-      then
-        echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.${ROOT_FS_TYPE} ${ROOT_MKFS_OPTS} -L ROOT ${DISK_DEV}p${ROOT_PART_NUM}${NC}"
-        mkfs.${ROOT_FS_TYPE} ${ROOT_MKFS_OPTS} -L ROOT ${DISK_DEV}p${ROOT_PART_NUM}
-        ROOT_PART=${DISK_DEV}p${ROOT_PART_NUM}
-      elif echo ${DISK_DEV} | grep -q "/dev/mapper"
-      then
-        echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.${ROOT_FS_TYPE} ${ROOT_MKFS_OPTS} -L ROOT ${DISK_DEV}-part${ROOT_PART_NUM}${NC}"
-        mkfs.${ROOT_FS_TYPE} ${ROOT_MKFS_OPTS} -L ROOT ${DISK_DEV}-part${ROOT_PART_NUM}
-        ROOT_PART=${DISK_DEV}-part${ROOT_PART_NUM}
-      else
-        echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.${ROOT_FS_TYPE} ${ROOT_MKFS_OPTS} -L ROOT ${DISK_DEV}${ROOT_PART_NUM}${NC}"
-        mkfs.${ROOT_FS_TYPE} ${ROOT_MKFS_OPTS} -L ROOT ${DISK_DEV}${ROOT_PART_NUM}
-        ROOT_PART=${DISK_DEV}${ROOT_PART_NUM}
-      fi
-    ;;
-  esac
-  #echo
-
-  case ${HOME_FS_TYPE} in
-    ext4|xfs)
-      echo -e "${LTBLUE}==============================================================${NC}"
-      echo -e "${LTBLUE}Creating filesystem on home partition${NC}"
-      echo -e "${LTBLUE}==============================================================${NC}"
-      echo
-      if echo ${DISK_DEV} | grep -q nvme
-      then
-        echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.${HOME_FS_TYPE} ${HOME_MKFS_OPTS} -L HOME ${DISK_DEV}p${HOME_PART_NUM}${NC}"
-        mkfs.${HOME_FS_TYPE} ${HOME_MKFS_OPTS} -L HOME ${DISK_DEV}p${HOME_PART_NUM}
-        HOME_PART=${DISK_DEV}p${HOME_PART_NUM}
-      elif echo ${DISK_DEV} | grep -q "/dev/mapper"
-      then
-        echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.${HOME_FS_TYPE} ${HOME_MKFS_OPTS} -L HOME ${DISK_DEV}-part${HOME_PART_NUM}${NC}"
-        mkfs.${HOME_FS_TYPE} ${HOME_MKFS_OPTS} -L HOME ${DISK_DEV}-part${HOME_PART_NUM}
-        HOME_PART=${DISK_DEV}-part${HOME_PART_NUM}
-      else
-        echo -e "${LTGREEN}COMMAND:${GRAY} mkfs.${HOME_FS_TYPE} ${HOME_MKFS_OPTS} -L HOME ${DISK_DEV}${HOME_PART_NUM}${NC}"
-        mkfs.${HOME_FS_TYPE} ${HOME_MKFS_OPTS} -L HOME ${DISK_DEV}${HOME_PART_NUM}
-        HOME_PART=${DISK_DEV}${HOME_PART_NUM}
-      fi
-    ;;
-  esac
-  #echo
-
+  create_home_fs
   echo
 }
 
@@ -1400,9 +1281,45 @@ copy_live_filesystem_to_disk() {
     then
       echo -e "${LTGREEN}  COMMAND:${GRAY} cp -a ${SQUASH_MOUNT}/* ${ROOT_MOUNT}/${NC}"
       cp -a ${SQUASH_MOUNT}/* ${ROOT_MOUNT}/
+
+     # DIRS_TO_COPY="$(ls ${SQUASH_MOUNT})"
+     # case ${PRESERVE_HOME_DIR} in
+     #   Y)
+     #     for COPY_DIR in ${DIRS_TO_COPY}
+     #     do
+     #       if ! echo ${COPY_DIR} grep "home" 
+     #       then
+     #         echo -e "${LTGREEN}  COMMAND:${GRAY} cp -a ${SQUASH_MOUNT}/${COPY_DIR} ${ROOT_MOUNT}/${NC}"
+     #         cp -a ${SQUASH_MOUNT}/${COPY_DIR} ${ROOT_MOUNT}/
+     #       fi
+     #     done
+     #   ;;
+     #   *)
+     #     echo -e "${LTGREEN}  COMMAND:${GRAY} cp -a ${SQUASH_MOUNT}/${COPY_DIR} ${ROOT_MOUNT}/${NC}"
+     #     cp -a ${SQUASH_MOUNT}/${COPY_DIR} ${ROOT_MOUNT}/
+     #   ;;
+     # esac
     else
       echo -e "${LTGREEN}  COMMAND:${GRAY} cp -a ${ROOTFS_IMAGE_MOUNT}/* ${ROOT_MOUNT}/${NC}"
       cp -a ${ROOTFS_IMAGE_MOUNT}/* ${ROOT_MOUNT}/
+
+     # DIRS_TO_COPY="$(ls ${ROOTFS_IMAGE_MOUNT})"
+     # case ${PRESERVE_HOME_DIR} in
+     #   Y)
+     #     for COPY_DIR in ${DIRS_TO_COPY}
+     #     do
+     #       if ! echo ${COPY_DIR} grep "home" 
+     #       then
+     #         echo -e "${LTGREEN}  COMMAND:${GRAY} cp -a ${ROOTFS_IMAGE_MOUNT}/${COPY_DIR} ${ROOT_MOUNT}/${NC}"
+     #         cp -a ${ROOTFS_IMAGE_MOUNT}/${COPY_DIR} ${ROOT_MOUNT}/
+     #       fi
+     #     done
+     #   ;;
+     #   *)
+     #     echo -e "${LTGREEN}  COMMAND:${GRAY} cp -a ${ROOTFS_IMAGE_MOUNT}/${COPY_DIR} ${ROOT_MOUNT}/${NC}"
+     #     cp -a ${ROOTFS_IMAGE_MOUNT}/${COPY_DIR} ${ROOT_MOUNT}/
+     #   ;;
+     # esac
     fi
     echo
 
@@ -1427,11 +1344,23 @@ copy_live_filesystem_to_disk() {
     echo "UUID=${SWAP_UUID}  swap  swap  defaults  0 0" > ${ROOT_MOUNT}/etc/fstab
  
     ROOT_UUID=$(ls -l /dev/disk/by-uuid | grep $(basename ${ROOT_PART}) | awk '{ print $9 }')
-#   echo -e "${LTPURPLE}   ROOT: ${GRAY}UUID=${ROOT_UUID}  /  ${ROOT_FS_TYPE}  acl,user_xattr  1 1${NC}"
-#   echo "UUID=${ROOT_UUID}  /  ${ROOT_FS_TYPE}  acl,user_xattr  1 1" >> ${ROOT_MOUNT}/etc/fstab
-    echo -e "${LTPURPLE}   ROOT: ${GRAY}UUID=${ROOT_UUID}  /  ${ROOT_FS_TYPE}  ${ROOT_FSTAB_OPTS}  1 1${NC}"
-    echo "UUID=${ROOT_UUID}  /  ${ROOT_FS_TYPE}  ${ROOT_FSTAB_OPTS}  1 1" >> ${ROOT_MOUNT}/etc/fstab
- 
+    case ${ROOT_FS_TYPE}
+    in
+      ext4|xfs)
+        echo -e "${LTPURPLE}   ROOT: ${GRAY}UUID=${ROOT_UUID}  /  ${ROOT_FS_TYPE}  ${ROOT_FSTAB_OPTS}  1 1${NC}"
+        echo "UUID=${ROOT_UUID}  /  ${ROOT_FS_TYPE}  ${ROOT_FSTAB_OPTS}  1 1" >> ${ROOT_MOUNT}/etc/fstab
+      ;;
+      btrfs)
+        echo -e "${LTPURPLE}   ROOT: ${GRAY}UUID=${ROOT_UUID}  /  btrfs  ${ROOT_FSTAB_OPTS}  0 0${NC}"
+        echo "UUID=${ROOT_UUID}  /  btrfs  ${ROOT_FSTAB_OPTS}  0 0" >> ${ROOT_MOUNT}/etc/fstab
+        for SUBVOL in ${BTRFS_DEFAULT_SUBVOLUMES}
+        do
+          echo -e "${LTPURPLE}   ${SUBVOL}: ${GRAY}UUID=${ROOT_UUID}  ${SUBVOL}  btrfs  subvol=/@${SUBVOL}  0 0${NC}"
+          echo "UUID=${ROOT_UUID}  ${SUBVOL}  btrfs  subvol=/@${SUBVOL}  0 0" >> ${ROOT_MOUNT}/etc/fstab
+        done
+      ;;
+    esac
+
     case ${BOOTLOADER} in
       UEFI|uefi)
         BOOTEFI_UUID=$(ls -l /dev/disk/by-uuid | grep $(basename ${BOOTEFI_PART}) | awk '{ print $9 }')
@@ -1461,8 +1390,6 @@ copy_live_filesystem_to_disk() {
         fi
  
         HOME_UUID=$(ls -l /dev/disk/by-uuid | grep $(basename ${HOME_PART}) | awk '{ print $9 }')
-#       echo "UUID=${HOME_UUID}  /home  ${HOME_FS_TYPE}  acl,user_xattr  0 0" >> ${ROOT_MOUNT}/etc/fstab
-#       echo -e "${LTPURPLE}   HOME: ${GRAY}UUID=${HOME_UUID}  /home  ${HOME_FS_TYPE}  acl,user_xattr  0 0${NC}"
         echo "UUID=${HOME_UUID}  /home  ${HOME_FS_TYPE}  ${HOME_FSTAB_OPTS}  0 0" >> ${ROOT_MOUNT}/etc/fstab
         echo -e "${LTPURPLE}   HOME: ${GRAY}UUID=${HOME_UUID}  /home  ${HOME_FS_TYPE}  ${HOME_FSTAB_OPTS}  0 0${NC}"
  
