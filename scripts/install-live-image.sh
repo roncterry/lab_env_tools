@@ -1,6 +1,6 @@
 #!/bin/bash
-# version: 3.4.0
-# date: 2021-07-16
+# version: 3.6.0
+# date: 2021-09-08
 
 ##############################################################################
 #                           Global Variables
@@ -26,52 +26,18 @@ NC='\e[0m'
 ##############
 
 ###########################################################################################################
-# User customizable variables (via environment variables)
+# User customizable variables (via CLI options)
 ###########################################################################################################
 
-if [ -z ${BIOSBOOT_SIZE} ]
-then
-  BIOSBOOT_SIZE="7MiB"
-fi
+DEF_BIOSBOOT_SIZE="7MiB"
+DEF_BOOTEFI_SIZE="256MiB"
+DEF_SWAP_SIZE="4GiB"
+DEF_ROOT_SIZE="100%"
+DEF_ROOT2_SIZE="30MiB"
+DEF_HOME_SIZE="100%"
 
-if [ -z ${BOOTEFI_SIZE} ]
-then
-  BOOTEFI_SIZE="256MiB"
-fi
-
-if [ -z ${SWAP_SIZE} ]
-then
-  SWAP_SIZE="4GiB"
-fi
-
-if [ -z ${ROOT_SIZE} ]
-then
-  ROOT_SIZE="100%"
-fi
-
-if [ -z ${ROOT2_SIZE} ]
-then
-  ROOT2_SIZE="30GiB"
-fi
-
-if [ -z ${HOME_SIZE} ]
-then
-  HOME_SIZE="100%"
-fi
-
-if [ -z ${ROOT_FS_TYPE} ]
-then
-  export ROOT_FS_TYPE="ext4"
-#else
-#  export ROOT_FS_TYPE
-fi
-
-if [ -z ${HOME_FS_TYPE} ]
-then
-  export HOME_FS_TYPE="ext4"
-else
-  export HOME_FS_TYPE
-fi
+DEF_ROOT_FS_TYPE="ext4"
+DEF_HOME_FS_TYPE="ext4"
 
 ###########################################################################################################
 # Non user customizable variables
@@ -102,7 +68,7 @@ BLOCK_DEV_LIST="$(fdisk -l | grep "/dev" | sed 's/Disk //g' | awk '{ print $1 }'
 
 usage() {
   echo
-  echo "USAGE: $(basename ${0}) <block_device> [<image_file>] [root_fs=<fs_type>] [with_home [home_fs=<fs_type>]] [force_msdos|force_gpt] [force_uefi|force_bios] [no_secureboot] [enable_cloudinit|disable_cloudinit] [force_rebuild_initrd]"
+  echo "USAGE: $(basename ${0}) <block_device> [<image_file>] [root_fs=<fs_type>] [with_home [home_fs=<fs_type>]] [root_size=<root_size>] [swap_size=<swap_size>] [root2_size=<root2_size>] [home_size=<home_size>] [force_msdos|force_gpt] [force_uefi|force_bios] [no_secureboot] [enable_cloudinit|disable_cloudinit] [enable_azureagent|disable_azureagent] [force_rebuild_initrd]"
   echo
   echo "  <image_file> is the path to the Live ISO image you wish to install from."
   echo
@@ -112,25 +78,25 @@ usage() {
   echo "  and use that as the source image."
   echo
   echo "  Options:"
+  echo "        swap_size=<size>          Specify the size of the swap volume"
+  echo "                                    For Megabytes use the MiB extension (example: 500MiB)"
+  echo "                                    For Gigabytes use the GiB extension (example: 500GiB)"
+  echo "                                    For Teraabytes use the TiB extension (example: 1TiB)"
+  echo "                                    To use all remaining space use: 100%"
+  echo "                                    (Note: Other percentages can be used as well to specify size)"
+  echo "        root_size=<size>          Specify the size of the root volume"
+  echo "                                    (Use the same values to specify size as defined above)"
+  echo "        root2_size=<size>         Specify the size of the root volume when a home volume is used"
+  echo "                                    (Use the same values to specify size as defined above)"
+  echo "        home_size=<size>          Specify the size of the home volume when a home volume is used"
+  echo "                                    (Use the same values to specify size as defined above)"
   echo "        root_fs=<fs_type>         Specify the filesystem to use on the root volume"
   echo "                                    Supported filesystem types: ext4 xfs"
   echo "                                    (default: ext4)"
-  echo "        root_size=<size>          Specify the size of the root volume"
-  echo "                                    For Megabytes use the MiB extension (example: 500MiB)"
-  echo "                                    For Gigabytes use the GiB extension (example: 500GiB)"
-  echo "                                    For Teraabytes use the TiB extension (example: 1TiB)"
-  echo "                                    To use all remaining space use: 100%"
-  echo "                                    (Note: Other percentages can be used as well to specify size)"
-  echo "        with_home                 Create a separate partition for /home"
   echo "        home_fs=<fs_type>         Specify the filesystem to use on the home volume"
   echo "                                    Supported filesystem types: ext4 xfs"
   echo "                                    (default: ext4)"
-  echo "        home_size=<size>          Specify the size of the home volume"
-  echo "                                    For Megabytes use the MiB extension (example: 500MiB)"
-  echo "                                    For Gigabytes use the GiB extension (example: 500GiB)"
-  echo "                                    For Teraabytes use the TiB extension (example: 1TiB)"
-  echo "                                    To use all remaining space use: 100%"
-  echo "                                    (Note: Other percentages can be used as well to specify size)"
+  echo "        with_home                 Create a separate partition for /home"
   echo "        force_msdos               Force creating a msdos parition table type"
   echo "        force_gpt                 Force creating a gtp parition table type"
   echo "        force_uefi                Force installing for the UEFI bootloader"
@@ -138,21 +104,9 @@ usage() {
   echo "        no_secureboot             Disable secure boot with the UEFI bootloader"
   echo "        disable_cloudinit         Disable cloud-init in the installed OS if enabled"
   echo "        enable_cloudinit          Enable cloud-init in the installed OS if disabled"
+  echo "        disable_azureagent        Disable waagent in the installed OS if enabled"
+  echo "        enable_azureagent         Enable waagent in the installed OS if disabled"
   echo "        force_rebuild_initrd      Force rebuilding of the initramfs after install"
-  echo
-  echo "  Note: This command can be customized by exporting the following"
-  echo "        environment variables:"
-  echo
-  echo "        BOOTLOADER      -Set the bootloader to use (default: BIOS)"
-  echo "                         Options: BIOS UEFI"
-  echo "        BIOSBOOT_SIZE   -size of BIOS Boot partition (default: 7MiB)"
-  echo "        BOOTEFI_SIZE    -size of Boot EFI partition (default: 256MiB)"
-  echo "        SWAP_SIZE       -size of swap partition (default: 4GiB)"
-  echo "        ROOT_SIZE       -size of root partition (default: 100%)"
-  echo "        ROOT2_SIZE      -size of root partition when /home is on its"
-  echo "                         own partition (default: 20GiB)"
-  echo "        HOME_SIZE       -size of /home partition if \"with_home\" is"
-  echo "                         supplied on the command line (default: 100%)"
   echo
   echo "  =============================================================================="
   echo "  Available Disks to Install To:"
@@ -452,6 +406,66 @@ check_for_root_size() {
   fi
 }
 
+check_for_swap_size() {
+  if echo $* | grep -q "swap_size="
+  then
+    SWAP_SIZE=$(echo $* | grep -o "swap_size=.*" | awk '{ print $1 }' | cut -d \= -f 2)
+  else
+    if [ -z ${SWAP_SIZE} ]
+    then
+      SWAP_SIZE="4GiB"
+    fi
+  fi
+}
+
+check_for_biosboot_size() {
+  if echo $* | grep -q "biosboot_size="
+  then
+    BIOSBOOT_SIZE=$(echo $* | grep -o "biosboot_size=.*" | awk '{ print $1 }' | cut -d \= -f 2)
+  else
+    if [ -z ${BIOSBOOT_SIZE} ]
+    then
+      BIOSBOOT_SIZE="7MiB"
+    fi
+  fi
+}
+
+check_for_bootefi_size() {
+  if echo $* | grep -q "bootefi_size="
+  then
+    BOOTEFI_SIZE=$(echo $* | grep -o "bootefi_size=.*" | awk '{ print $1 }' | cut -d \= -f 2)
+  else
+    if [ -z ${BOOTEFI_SIZE} ]
+    then
+      BOOTEFI_SIZE="256MiB"
+    fi
+  fi
+}
+
+check_for_root2_size() {
+  if echo $* | grep -q "root2_size="
+  then
+    ROOT2_SIZE=$(echo $* | grep -o "root2_size=.*" | awk '{ print $1 }' | cut -d \= -f 2)
+  else
+    if [ -z ${ROOT2_SIZE} ]
+    then
+      ROOT2_SIZE="30GiB"
+    fi
+  fi
+}
+
+check_for_home_size() {
+  if echo $* | grep -q "home_size="
+  then
+    HOME_SIZE=$(echo $* | grep -o "home_size=.*" | awk '{ print $1 }' | cut -d \= -f 2)
+  else
+    if [ -z ${HOME_SIZE} ]
+    then
+      HOME_SIZE="100%"
+    fi
+  fi
+}
+
 check_for_root_fs_type() {
   if echo $* | grep -q "root_fs="
   then
@@ -459,7 +473,7 @@ check_for_root_fs_type() {
   else
     if [ -z ${ROOT_FS_TYPE} ]
     then
-      ROOT_FS_TYPE=ext4
+      ROOT_FS_TYPE=${DEF_ROOT_FS_TYPE}
     fi
   fi
 
@@ -497,7 +511,7 @@ check_for_create_home_partition() {
     else
       if [ -z ${ROOT2_SIZE} ]
       then
-        ROOT2_SIZE="20GiB"
+        ROOT2_SIZE="${DEF_ROOT2_SIZE}"
       fi
     fi
  
@@ -507,7 +521,7 @@ check_for_create_home_partition() {
     else
       if [ -z ${HOME_SIZE} ]
       then
-        HOME_SIZE="100%"
+        HOME_SIZE="${DEF_HOME_SIZE}"
       fi
     fi
  
@@ -517,7 +531,7 @@ check_for_create_home_partition() {
     else
       if [ -z ${HOME_FS_TYPE} ]
       then
-        HOME_FS_TYPE=ext4
+        HOME_FS_TYPE=${DEF_HOME_FS_TYPE}
       fi
     fi
  
@@ -572,6 +586,26 @@ check_for_enable_cloudinit() {
     OTHER_OPTIONS="${OTHER_OPTIONS} enable_cloudinit"
   else
     ENABLE_CLOUDINIT=N
+  fi
+}
+
+check_for_disable_azureagent() {
+  if echo $* | grep -q "disable_azureagent"
+  then
+    DISABLE_AZUREAGENT=Y
+    OTHER_OPTIONS="${OTHER_OPTIONS} disable_azureagent"
+  else
+    DISABLE_AZUREAGENT=N
+  fi
+}
+
+check_for_enable_azureagent() {
+  if echo $* | grep -q "enable_azureagent"
+  then
+    ENABLE_AZUREAGENT=Y
+    OTHER_OPTIONS="${OTHER_OPTIONS} enable_azureagent"
+  else
+    ENABLE_AZUREAGENT=N
   fi
 }
 
@@ -1471,6 +1505,36 @@ copy_live_filesystem_to_disk() {
       ;;
     esac
 
+  #############################################################
+  # Disable azure-agent if required
+  #############################################################
+    case ${DISABLE_AZUREAGENT} in
+      Y)
+        echo -e "${LTCYAN}  -Disabling azure-agent ...${NC}"
+        echo -e "${LTGREEN}  COMMAND:${GRAY} chroot ${ROOT_MOUNT} /usr/bin/systemctl disable waagent.service${NC}"
+        chroot ${ROOT_MOUNT} /usr/bin/systemctl disable waagent.service
+ 
+        echo -e "${LTGREEN}  COMMAND:${GRAY} chroot ${ROOT_MOUNT} /usr/bin/systemctl disable hv_kvp_daemon.service${NC}"
+        chroot ${ROOT_MOUNT} /usr/bin/systemctl disable hv_kvp_daemon.service
+        echo
+      ;;
+    esac
+
+  #############################################################
+  # Enable azure-agent if required
+  #############################################################
+    case ${ENABLE_AZUREAGENT} in
+      Y)
+        echo -e "${LTCYAN}  -Enabling azure-agent ...${NC}"
+        echo -e "${LTGREEN}  COMMAND:${GRAY} chroot ${ROOT_MOUNT} /usr/bin/systemctl enable waagent.service${NC}"
+        chroot ${ROOT_MOUNT} /usr/bin/systemctl enable waagent.service
+ 
+        echo -e "${LTGREEN}  COMMAND:${GRAY} chroot ${ROOT_MOUNT} /usr/bin/systemctl enable hv_kvp_daemon.service${NC}"
+        chroot ${ROOT_MOUNT} /usr/bin/systemctl enable hv_kvp_daemon.service
+        echo
+      ;;
+    esac
+
   ####################################################################
   # Unmount the desitnation partitions that we just installed into
   ####################################################################
@@ -1840,9 +1904,14 @@ main() {
     check_for_root_fs_type $*
 
     ################################################################
-    # Check to see how large to make the root partition
+    # Check to see how large to make the partitions
     ################################################################
     check_for_root_size $*
+    check_for_swap_size $*
+    check_for_biosboot_size $*
+    check_for_bootefi_size $*
+    check_for_root2_size $*
+    check_for_home_size $*
 
     ################################################################
     # Check to see if we need to create a home partition
@@ -1868,6 +1937,16 @@ main() {
     # Check for enabling cloud-init
     ################################################################
     check_for_enable_cloudinit $*
+
+    ################################################################
+    # Check for disabling azure-agent
+    ################################################################
+    check_for_disable_azureagent $*
+
+    ################################################################
+    # Check for enabling azure-agent
+    ################################################################
+    check_for_enable_azureagent $*
 
     ################################################################
     # Check for forcing the rebuild of the initrd
