@@ -1,7 +1,7 @@
 #!/bin/bash
 #
-# version: 1.1.4
-# date: 20200512
+# version: 1.1.5
+# date: 20220222
 
 usage() {
   echo
@@ -70,7 +70,7 @@ do
     case ${ARCHIVE_EXT}
     in
       7z)
-        md5sum ${DIR}.${ARCHIVE_EXT}.0* > ${DIR}.${ARCHIVE_EXT}.md5sums
+        md5sum ${DIR}.${ARCHIVE_EXT}.[0-9][0-9][0-9] > ${DIR}.${ARCHIVE_EXT}.md5sums
       ;;
       *)
         md5sum ${DIR}.${ARCHIVE_EXT} > ${DIR}.${ARCHIVE_EXT}.md5sums
