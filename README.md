@@ -28,7 +28,7 @@ The configuration of the networking in a lab environment is left to the discreti
 
 ## Virtual Bridge Names
 
-Because it is possible that multiple lab environments can installed on a single lab machine at a time, there is a possibility of naming collisions between the virtual networks. It is strongly recommended that the network XML definition be edited so that the virtual bridge created by Libvirt, when the network is created, be named using a more descriptive name. The recommendation is to use the name of the virtual network as the name of the bridge.
+Because it is possible that multiple lab environments can be installed on a single lab machine at a time, there is a possibility of naming collisions between the virtual networks. It is strongly recommended that the network XML definition be edited so that the virtual bridge created by Libvirt, when the network is created, be named using a more descriptive name. The recommendation is to use the name of the virtual network as the name of the bridge.
 
 **_Example_**: 
 
@@ -42,13 +42,13 @@ Because it is possible that multiple lab environments can installed on a single 
 
 For things like SUSECON sessions, because you can’t really know what the other sessions’ virtual networks are, it is suggested that you use a naming convention that includes your session ID (Example: **HO77572**). In the case where your session requires multiple networks, append the network number to the session ID separated by a **_** (Example: **HO77572_1** for the first network, **HO77572_2** for the second network, etc.).
 
-Note that there is a charater number lmit for the names of these bridge names (16 characters max?) so they should be abreveated of possible.
+Note that there is a character number limit for the names of these bridge names (16 characters max?) so they should be abbreviated of possible.
 
 ## Network Definition XML File
 
 The Libvirt virtual network definition XML file should be provided. 
 
-If you wish to manually create these netowrks, example network definition XML files are provided in the Templates directory.
+If you wish to manually create these networks, example network definition XML files are provided in the Templates directory.
 
 If you use Virt-Manager to create the virtual networks, this XML file can be created from these virtual network using the following command:
 
@@ -62,7 +62,7 @@ The name of the file should be the name of the **<NETWORK_NAME>.xml** where **<N
 
 The name of the **network** should match the name of the **bridge** and the name of the **domain** in the config file.
 
-If the virtual networks were created using Virt-Manager they will not adhere to the naming standard and, at minimum, the bridge name must be changed. Unfortunatly this is difficult to do on an existing virtual network. It is often easiest to dump out the XML definiton to a file, edit the file, stop and delete the exisitng virtual network then redefine and enable the network from the edited XML definition file.
+If the virtual networks were created using Virt-Manager they will not adhere to the naming standard and, at minimum, the bridge name must be changed. Unfortunately this is difficult to do on an existing virtual network. It is often easiest to dump out the XML definition to a file, edit the file, stop and delete the existing virtual network then redefine and enable the network from the edited XML definition file.
 
 The following is an example of one of these network definition XML files:
 
@@ -180,7 +180,7 @@ If you use Virt-Manager to create the new VMs it is best if you create them with
 virsh dumpxml <NAME_OF_VM> > /home/VMs/<COURSE_ID>/<NAME_OF_VM>/<NAME_OF_VM>.xml
 ```
 
-After creating the VM’s XML definition file from an existing VM, you must edit the file and remove the **<uuid>** setcion. Other sections such as the **<cpu>** section, **<disk>**, sections, **<interface>** sections, etc. must be updated following the standards layed out in the **Libvirt_Requirements_and_Best_Practices** document.
+After creating the VM’s XML definition file from an existing VM, you must edit the file and remove the **<uuid>** setcion. Other sections such as the **<cpu>** section, **<disk>**, sections, **<interface>** sections, etc. must be updated following the standards specified in the **Libvirt_Requirements_and_Best_Practices** document.
 
 ## Virtual Machine Disks
 
@@ -194,15 +194,15 @@ Example **qemu-img** command:
 qemu-img create -f qcow2 /home/VMs/<COURSE_ID>/<NAME_OF_VM>/disk01.qcow2 20G
 ```
 
-Regarding virtual machine disk image naming. As disk images will ever only be used by a single VM, and becuase they will always reside in the VM's directory, they named of the disk images do not need to contain the VM name. In fact it can make things easier if you use simple named like `disk01.qcow2` or descriptive named like `repos.qcow2`. Doing this will also enable used of some of the lab environment creation and management tools and scripts.
+Regarding virtual machine disk image naming. As disk images will only be used by a single VM, and because they will always reside in the VM's directory, the names of the disk images do not need to contain the VM name. In fact, it can make things easier if you use simple named like `disk01.qcow2` or descriptive named like `repos.qcow2`. Doing this will also enable the use of some of the lab environment creation and management tools and scripts.
 
-Regarding the file permission/ownership of the virtual machine disk images. When using Virt-Manager to create a VM and its disk images, the default behavior is for the disk image file(s) to be owned by root and the permissions to be 600. This will cause problems later on when archiveing the VMs for distribution.  It is best to change the files to be owned by your user and primary group and the permission to be 644.
+Regarding the file permission/ownership of the virtual machine disk images. When using Virt-Manager to create a VM and its disk images, the default behavior is for the disk image file(s) to be owned by root and the permissions to be 600. This will cause problems later on when archiving the VMs for distribution.  It is best to change the files to be owned by your user and primary group and the permission to be 644.
 
 # Storage Pools
 
 ## Virtual Machine Storage Pools (Optional)
 
-Defining storage pools for each VM's directory can make working with the VMs easier, particularly if you are running different VMs on different lab machines and accessing them remotly using Virt-Manager. The name of these VM directory specific pool definintion file should be **<NAME_OF_VM>.pool.xml**. The structure of a VM directory specific storage pool XML file is as follows:
+Defining storage pools for each VM's directory can make working with the VMs easier, particularly if you are running different VMs on different lab machines and accessing them remotely using Virt-Manager. The name of these VM directory specific pool definition file should be **<NAME_OF_VM>.pool.xml**. The structure of a VM directory specific storage pool XML file is as follows:
 
 ```
 <pool type='dir'>
@@ -220,7 +220,7 @@ Defining storage pools for each VM's directory can make working with the VMs eas
 
 ## Common Directory Storage Pools (Optional)
 
-If you are using a common directory for files used by multiple VMs such as ISO images it is best to define storage pools for these common directories as well. The name of the pool definition files for these common directories must be **<COURSE_ID>-<POOL_NAME>.pool.xml**. The following is an example for a common ISO directory for a course:
+If you are using a common directory for files used by multiple VMs such as ISO images, it is best to define storage pools for these common directories as well. The name of the pool definition files for these common directories must be **<COURSE_ID>-<POOL_NAME>.pool.xml**. The following is an example for a common ISO directory for a course:
 
 ```
 <pool type='dir'>
@@ -241,9 +241,9 @@ If you are using a common directory for files used by multiple VMs such as ISO i
 </pool>
 ```
 
-If you are using the [Installer Framework](https://github.com/roncterry/install_lab_env) to install your the VMs in your lab environment there are specific directories that you must place these pool definition files in:
+If you are using the [Installer Framework](https://github.com/roncterry/install_lab_env) to install the VMs in your lab environment there are specific directories that you must place these pool definition files in:
 
-* For VM directory specific pools you must place the pools definition files in the VM/s directly along woth its other configuration and disk images. It must be named following the standard listed above. The pools will be creataed and activated when the VM is installed and they will be removed when the VM is removed.
+* For VM directory specific pools you must place the pools definition files in the VM/s directly along with its other configuration and disk images. It must be named following the standard listed above. The pools will be created and activated when the VM is installed and they will be removed when the VM is removed.
 
 * For the common directory pools the files must be placed in the libvirt.cfg directory of the installer package (i.e. <COURSE_ID>/config/libvirt.cfg/ - see the [Installer Framework](https://github.com/roncterry/install_lab_env) for more details). These pools will be created and activated when the lab environment is installed and removed when it the lab environment is removed.
 
@@ -255,13 +255,13 @@ If your virtual machines require ISO images or if you want to provide ISO images
 
 If an ISO image will only be used by a single VM, the ISO image must reside in the VM’s directory along with the other disks belonging to that VM (see Virtual Machine Directory above).
 
-If an ISO image will be used by multiple VMs it must be plased in a common directory so that duplication of data can be reduced. The directory defined for this is:  **/home/iso/<COURSE_ID>** 
+If an ISO image will be used by multiple VMs it must be placed in a common directory so that duplication of data can be reduced. The directory defined for this is:  **/home/iso/<COURSE_ID>** 
 
 *Example*: **/home/iso/<COURSE_ID>/my-iso.iso**
 
 # Virtual BMC Devices (Optional)
 
-Virtual BMC devices can be useful if you need to emulate a base machine controller (BMC, DRAC, ILO, etc.) for  VM. The VirtualBMC project maintains software that does this for Libvirt VMs. I openSUSE this can be istalled using the **python3-virtualbmc** package.
+Virtual BMC devices can be useful if you need to emulate a base machine controller (BMC, DRAC, ILO, etc.) for  VM. The VirtualBMC project maintains software that does this for Libvirt VMs. In openSUSE this can be installed using the **python3-virtualbmc** package.
 
 ## Virtual Machine Virtual BMC Devices
 
@@ -283,7 +283,7 @@ All cloud images related to a course should reside in a single directory named: 
 
 A standard lab machine image based on openSUSE is provided for developing and running lab environments. This lab machine image is preconfigured for Libvirt/KVM to be run as a regular user. It also has a number of other extras preconfigured such as additional GNOME Shell extensions and additional scripts for lab machine, lab environment and VM management. GNOME is the default desktop environment.
 
-A page contianing the instructions for installing this standard image can be found here: https://github.com/roncterry/configure-as-labmachine
+A page containing the instructions for installing this standard image can be found here: https://github.com/roncterry/configure-as-labmachine
 
 ## Lab Environment Installer Framework
 
@@ -301,7 +301,7 @@ There are a number of additional scripts that have been developed that can help 
 
 This script is part of the Lab Environment Installer Framework but is also provided as part of the standard lab machine scripts because it is usable and useful outside of the Framework as well.
 
-This script can be used to backup the current state of a currently installed entire lab environment. For the backup, it creates an installer package (using the Lab Environment Installer Framework) for the lab environment that includes archives of the current state of the VMs, ISO images, cloud images, course files, scripts, etc. These backups are created in **/install/courses/** and the directories that map to the backup/installer package are named using the following format: 
+This script can be used to back up the current state of a currently installed entire lab environment. For the backup, it creates an installer package (using the Lab Environment Installer Framework) for the lab environment that includes archives of the current state of the VMs, ISO images, cloud images, course files, scripts, etc. These backups are created in **/install/courses/** and the directories that map to the backup/installer package are named using the following format: 
 
 **<COURSE_ID>-backup-<DATE_STAMP>.<UNIX_TIME_STAMP>** 
 
@@ -313,9 +313,11 @@ backup_lab_env.sh <course_id> [<archive_format>]
 
 **Detailed Description**:
 
-When the individual VMs are backed up they are backed up in the same manner as the `backup_vm.sh` script (listed below) with the exception of the md5sums file is not created.
+When the individual VMs are backed up they are backed up in the same manner as the `backup_vm.sh` script (listed below) except the md5sums file is not created.
 
-By default VM archives are created using p7zip with the compression format of LZMA2. This can be overridden at the command line using the **<archive_format>**. The supported archive formats are:
+By default, VM archives are created using p7zip with the compression format of LZMA2. This can be overridden at the command line supplying the `<archive_format>` as the last argument. 
+
+The supported archive formats are:
 
 | Archive Format | Description                                                |
 | -------------- | ---------------------------------------------------------- |
@@ -360,7 +362,7 @@ To (re)install the course the `install_lab_env.sh` script in the lab environment
 
 **Intro**:
 
-This script is part of the Lab Environment Installer Framework. It is not provided as part of the standard lab machine scripts as it is specific to a lab environment installer package. It is discussed here because it directly applys to the the output created by the `backup_lab_env.sh` script and it performs operations included in the `restore_vm.sh` script.
+This script is part of the Lab Environment Installer Framework. It is not provided as part of the standard lab machine scripts as it is specific to a lab environment installer package. It is discussed here because it directly applies to the output created by the `backup_lab_env.sh` script and it performs operations included in the `restore_vm.sh` script.
 
 This script is used to install a lab environment from a lab environment installer package. During the installation the VMs will be restored in the same manner that the `restore_vm.sh` script restores them.
 
@@ -380,7 +382,7 @@ This script is part of the Lab Environment Installer Framework but is also provi
 
 This script can be used to backup the current state of a currently installed individual virtual machine. 
 
-The VM you are backing up must be in your current wokring directory.
+The VM you are backing up must be in your current working directory.
 
 **Usage**:
 
@@ -394,15 +396,17 @@ Before the backup archive is created the following will be done:
 
 - If the VM has snapshots, the snapshot definition files will be moved into a `snapshots` subdirectory of the VM's directory and the VMs definition file in the VM's directory will be updated to point to the snapshot definition files in their new location.
 
-- If the VM uses UEFI booting, the EFI variables file will be moved into an `nvram` subdirectory fo the VM's directory and the VM's definition file in the VM's directory will be updated to point to the new location fo this file.
+- If the VM uses UEFI booting, the EFI variables file will be moved into an `nvram` subdirectory of the VM's directory and the VM's definition file in the VM's directory will be updated to point to the new location of this file.
   
   (IMPORTANT: The current registered version of the VM will NOT be updated to point to these files (snapshots and EFI variables) an must either be manually updated using `virsh edit` or the VM must be unregistered (`virsh delete`) and reregistered (`virsh define <path_to_vm_definition_file>`) for those files to be used.)
 
-- If the VM has a TPM device, the TMP file will be copied into a `tpm/<tpm_version>/` subdirectory of the VM's directory. As TMP uses an external application (`swtpm`) to provide the TPM device and this location is not specified in the VM's definition file this cannot be updated in the VM's definition file. When restoring the VM this file must be coped back into the location where the `swtpm` applciation can access it (i.e. `/var/lib/libvirt/swtpm/<VM_UUID>/`). (Note: If you use the `restore_vm.sh` or `install_lab_env.sh` script to resotre/install the VM they will ensure the TPM file gets copied there for you.()
+- If the VM has a TPM device, the TMP file will be copied into a `tpm/<tpm_version>/` subdirectory of the VM's directory. As TMP uses an external application (`swtpm`) to provide the TPM device and this location is not specified in the VM's definition file this cannot be updated in the VM's definition file. When restoring the VM this file must be coped back into the location where the `swtpm` application can access it (i.e. `/var/lib/libvirt/swtpm/<VM_UUID>/`). (Note: If you use the `restore_vm.sh` or `install_lab_env.sh` script to restore/install the VM they will ensure the TPM file gets copied there for you.()
 
 The backup archive of the VM will then contain these snapshot definition, EFI variable and TMP files along with the other VM config files and disk images.
 
-By default VM archives are created using p7zip with the compression format of LZMA2. This can be overridden at the command line using the . The supported archive formats are:
+By default, VM archives are created using p7zip with the compression format of LZMA2. This can be overridden at the command line supplying the `<archive_format>` as the last argument.
+
+The supported archive formats are:
 
 | Archive Format | Description                                                |
 | -------------- | ---------------------------------------------------------- |
@@ -454,7 +458,7 @@ This scripts create an archive of a specified directory or archives of a comma d
 
 This can be particularly useful if you need to create a new archive for a VM that was just updated and insert that VM’s archive file(s) into an already existing installer package without having to rebuild the entire installer package. 
 
-**IMPORTANT**: The `create_archive.sh` script **WILL NOT** backup shapshot definition files, the EFI variables file or the TMP file.
+**IMPORTANT**: The `create_archive.sh` script **WILL NOT** backup snapshot definition files, the EFI variables file or the TMP file.
 
 **Usage**:
 
@@ -464,7 +468,7 @@ create-archive.sh <directory>[,<directory>,...] [<archive_format>]
 
 **Detailed Description**:
 
-By default archives are created using p7zip with the compression format of LZMA2. This can be overridden at the command line using the **<archive_format>**. The supported archive formats are:
+By default archives are created using p7zip with the compression format of LZMA2. This can be overridden at the command line using the `<archive_format>`. The supported archive formats are:
 
 | Archive Format | Description                                                |
 | -------------- | ---------------------------------------------------------- |
@@ -482,7 +486,7 @@ By default archives are created using p7zip with the compression format of LZMA2
 
 This scripts create archives of all VM directories inside a course directory. This should be run from inside the course VM directory (i.e. **/home/VMs/SOC101/** for a course named SOC101). 
 
-**IMPORTANT**: Like with the `create_archive.sh` script, the `create-vm-archives.sh` script **WILL NOT** backup shapshot definition files, the EFI variables file or the TMP file.
+**IMPORTANT**: Like with the `create_archive.sh` script, the `create-vm-archives.sh` script **WILL NOT** backup snapshot definition files, the EFI variables file or the TMP file.
 
 **Usage**:
 
@@ -492,7 +496,7 @@ create-vm-archives.sh [<archive_format>]
 
 **Detailed Description**:
 
-By default VM archives are created using p7zip with the compression format of LZMA2. This can be overridden at the command line using the **<archive_format>**. The supported archive formats are:
+By default VM archives are created using p7zip with the compression format of LZMA2. This can be overridden at the command line using the `<archive_format>`. The supported archive formats are:
 
 | Archive Format | Description                                                |
 | -------------- | ---------------------------------------------------------- |
@@ -508,7 +512,7 @@ By default VM archives are created using p7zip with the compression format of LZ
 
 **Intro**:
 
-This script allows you to change the paths to the disks in the Libvirt XML VM definition files for all VMs in a course directory. This is particularly useful if you have change the name of the course directory, the name of the VM directory or have copied VMs from existing course into a new course.
+This script allows you to change the paths to the disks in the Libvirt XML VM definition files for all VMs in a course directory. This is particularly useful if you have changed the name of the course directory, the name of the VM directory or have copied VMs from existing course into a new course.
 
 **Usage**:
 
@@ -518,7 +522,7 @@ change-vm-disk-path.sh <course_vm_directory> <new_vm_directory_path>
 
 **Detailed Description**:
 
-For example, if I have a course named SOLE201, according to the standards laid out previously, all of the VMs for that course should exist in a **/home/VMs/SLE201/** directory. Each of the VMs should be in their own directory (i.e. **/home/VMs/SLE201/SLE201-server1/**, **/home/VMs/SLE201/SLE201-server2**, etc.) and those VM directories should contain the disk image for that MV as well as a Libvirt XML VM definition file. The VM definition files should be named the same as the VM directory (i.e. **/home/VMs/SLE201/SLE201-server1/SLE201-server1.xml**, etc.). This script updates the path for the disk images in these VM definition files.
+For example, if I have a course named SLE201, according to the standards specified previously, all the VMs for that course should exist in a **/home/VMs/SLE201/** directory. Each of the VMs should be in their own directory (i.e. **/home/VMs/SLE201/SLE201-server1/**, **/home/VMs/SLE201/SLE201-server2**, etc.) and those VM directories should contain the disk image for that MV as well as a Libvirt XML VM definition file. The VM definition files should be named the same as the VM directory (i.e. **/home/VMs/SLE201/SLE201-server1/SLE201-server1.xml**, etc.). This script updates the path for the disk images in these VM definition files.
 
 ### host-sshfs-dirs.sh
 
@@ -557,9 +561,9 @@ The command **host-sshfs-dirs.sh list** will display a list of directories curre
 
 This script resets a VMs disk image in one of two ways: 
 
-- First, if the disk image has snapshots it reverts the disk back to the first snapshot and removes all other snapshots. 
+- First, if the disk image has snapshots, it reverts the disk back to the first snapshot and removes all other snapshots. 
 
-- Second, if the disk doesn’t have snapshots it deletes the disk image file and creates a new empty disk image file of the same type and size in the original file’s place.
+- Second, if the disk doesn’t have snapshots, it deletes the disk image file and creates a new empty disk image file of the same type and size in the original file’s place.
 
 Usage:
 
@@ -577,7 +581,7 @@ reset-vm-disk-image.sh <vm_dir>
 
 This script uses the virt-sparsify command to sparsify all of the disks for a VM. You must run this script from within a VM's directory (where the VM's disk image reside). It first renames the original disk image file and then created a sparse copy of that disk using the disk image file's original file name.
 
-**WARNING** - You must have enough space on the host systems filesystem to hold the full size of the VM's disk while it is being sparsified. (It operates on only one of the VM's disks at a time so you don't have to have enough free space for all fo the VM's disk at once).
+**WARNING** - You must have enough space on the host systems filesystem to hold the full size of the VM's disk while it is being sparsified. (It operates on only one of the VM's disks at a time so you don't have to have enough free space for all of the VM's disk at once).
 
 Usage:
 
