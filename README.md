@@ -24,7 +24,7 @@ The usernames and passwords that exist in the lab VMs are at the discretion of t
 
 The configuration of the networking in a lab environment is left to the discretion of the course developer based on the requirements for the course. The virtual network IP addresses should rcome from the network address blocks reserved for private addresses (i.e. `192.168.0.0-192.168.255.255/24`,`172.16.0.0-172.31.255.255/16`, `10.0.0.0-10.255.255.0/8`). However, it is strongly recommended that commonly used private subnets (i.e. `192.168.1.0/24`, `10.0.0.0/24`, etc.) be avoided as they will collide with addresses on physical networks, causing the virtual networks to not function correctly. It is also recommended that the default Libvirt network (named `default` with a subnet of `192.168.100.0/24`) be avoided. The name of the virtual network should be something that is descriptively relative to the course. 
 
-(*Example*: The **admin** network in the OpenStack cloud course could be named **cloud-admin**)
+(*Example*: The **main** network in the SLE201 cloud course could be named **sle201-net**)
 
 ## Virtual Bridge Names
 
@@ -33,16 +33,16 @@ Because it is possible that multiple lab environments can be installed on a sing
 **_Example_**: 
 
 ```
-<name>cloud-admin</name>
+<name>sle201-net</name>
 ...
   <ip address=’192.168.124.1’, netmask=’255.255.255.0’> 
-  <bridge name=’cloud-admin‘ … />
+  <bridge name=’sle201-net‘ … />
 ...
 ```
 
 For things like SUSECON sessions, because you can’t really know what the other sessions’ virtual networks are, it is suggested that you use a naming convention that includes your session ID (Example: **HO77572**). In the case where your session requires multiple networks, append the network number to the session ID separated by a **_** (Example: **HO77572_1** for the first network, **HO77572_2** for the second network, etc.).
 
-Note that there is a character number limit for the names of these bridge names (16 characters max?) so they should be abbreviated of possible.
+Note: There is a character number limit for the names of these bridge names (16 characters max?) so they should be abbreviated if possible.
 
 ## Network Definition XML File
 
@@ -50,19 +50,19 @@ The Libvirt virtual network definition XML file should be provided.
 
 If you wish to manually create these networks, example network definition XML files are provided in the Templates directory.
 
-If you use Virt-Manager to create the virtual networks, this XML file can be created from these virtual network using the following command:
+If you use Virt-Manager to create the virtual networks, this XML file can be created from these virtual networks using the following command:
 
 ```
 virsh net-dumpxml <NETWORK_NAME> > <NETWORK_NAME>.xml
 ```
 
-The name of the file should be the name of the **<NETWORK_NAME>.xml** where **<NETWORK_NAME>** = the name of the virtual network (i.e. sle201-net).
+The name of the file should be the name of the `<NETWORK_NAME>.xml` where `<NETWORK_NAME>` = the name of the virtual network (i.e. **sle201-net**).
 
 
 
 The name of the **network** should match the name of the **bridge** and the name of the **domain** in the config file.
 
-If the virtual networks were created using Virt-Manager they will not adhere to the naming standard and, at minimum, the bridge name must be changed. Unfortunately this is difficult to do on an existing virtual network. It is often easiest to dump out the XML definition to a file, edit the file, stop and delete the existing virtual network then redefine and enable the network from the edited XML definition file.
+If the virtual networks are created using Virt-Manager they will not adhere to the naming standard and, at minimum, the bridge name must be changed. Unfortunately, this is difficult to do on an existing virtual network. It is often easiest to dump out the XML definition to a file, edit the file, stop and delete the existing virtual network then redefine and enable the network from the edited XML definition file.
 
 The following is an example of one of these network definition XML files:
 
@@ -88,11 +88,11 @@ The following is an example of one of these network definition XML files:
 
 It is possible to spread a lab environment for a single student across multiple lab machines. When doing this it will typically require a different networking configuration to allow the VMs to communicate with each other when they are running on different lab machines. This different networking environment typically consists of a secondary network connection between the lab machines with separate VLANs with corresponding Linux bridges attached to them running across this secondary network. These Linux bridges take the place of the Libvirt virtual networks that the VMs are typically connected to.
 
-When providing for this multi lab machine environment, each VM will require an addition XML definition file that specifies these bridges instead of Libvirt networks. Both XML definition files are required (single lab machine and multi lab machine versions) and should reside in the VM specific directory in **/home/VMs/<COURSE_ID>/** (i.e. **/home/VMs/<COURSE_ID>/<NAME_OF_VM>/**).
+When providing for this multi lab machine environment, each VM will require an addition XML definition file that specifies these bridges instead of Libvirt networks. Both XML definition files are required (single lab machine and multi lab machine versions) and should reside in the VM specific directory in `/home/VMs/<COURSE_ID>/` (i.e. `/home/VMs/<COURSE_ID>/<NAME_OF_VM>/`).
 
 (Where **<COURSE_ID>** is the course ID number).
 
-To have the VM connect to these Linux bridges on the VLANs rather than the Libvirt networks, you edit the VM’s secondary multi lab machine specific XML definition (typically named **\<NAME_OF_VM>-multi_lm.xml**). In the network interface descriptions, change "network" to ‘bridge”. See the following example configuration snippets for the configuration changes. The values that need to be modified are bolded.
+To have the VM connect to these Linux bridges on the VLANs rather than the Libvirt networks, you edit the VM’s secondary multi lab machine specific XML definition (typically named `<NAME_OF_VM>-multi_lm.xml`). In the network interface descriptions, change "network" to ‘bridge”. See the following example configuration snippets for the configuration changes. The values that need to be modified are bolded.
 
 Example with Libvirt networks (original VM definition file):
 
@@ -128,13 +128,13 @@ When creating virtual machines, the following guidelines should be followed:
 
 ## Virtual Machine Names
 
-Because it is possible (common?) to have VMs for different courses on a lab (development) machine at the same time the VMs must be named in a way that will both eliminate the possibility of name collisions and identify which course the VM is related to. For this purpose the names of the VMs should be: <COURSE_ID>-<VM_NAME>
+Because it is possible (common?) to have VMs for different courses on a lab (development) machine at the same time the VMs must be named in a way that will both eliminate the possibility of name collisions and identify which course the VM is related to. For this purpose, the names of the VMs should be: `<COURSE_ID>-<VM_NAME>`
 
 (In this document this is referenced as **<NAME_OF_VM>**)
 
 Example: **SLE201-server01** 
 
-(For SUSECON session the <COURSE_ID> is the SUSECON Session ID.)
+(For SUSECON session the `<COURSE_ID>` is the SUSECON Session ID.)
 
 For consistency and so that tools such as the [Installer Framework](https://github.com/roncterry/install_lab_env) can be used, the name of the VM, the name of the VM's directory, the name of the VM's main configuration file along with the names of any other VM specific configuration files must match. This is described in more detail in the **Virtual Machine Directory** section.
 
@@ -142,13 +142,13 @@ For consistency and so that tools such as the [Installer Framework](https://gith
 
 The base directory for all VMs is: **/home/VMs/** 
 
-In that directory a subdirectory will be created for a specific course which will be named: **<COURSE_ID>**
+In that directory a subdirectory will be created for a specific course which will be named: `<COURSE_ID>`
 
-Example: **/home/VMs/<COURSE_ID>/**
+Example: `/home/VMs/<COURSE_ID>/`
 
 All files related to a virtual machine must exist in a subdirectory of the <COURSE_ID> directory and the name of the VM's directory must be as described in the Virtual Machine Names section above. 
 
-Example: **/home/VMs/<COURSE_ID>/<NAME_OF_VM>/** 
+Example: `/home/VMs/<COURSE_ID>/<NAME_OF_VM>/` 
 
 The files in the individual virtual machine's directory should include at least the following:
 
@@ -170,23 +170,23 @@ Note: If you use Virt-Manager to create the new VM, it is easiest to manually cr
 
 ## Virtual Machine XML Definition Files
 
-The virtual machine’s XML definition file should be named **<NAME_OF_VM>.xml** (where **<NAME_OF_VM>** is the name of the virtual machine as defined in the **Virtual Machine Names** section).
+The virtual machine’s XML definition file should be named `<NAME_OF_VM>.xml` (where `<NAME_OF_VM>` is the name of the virtual machine as defined in the **Virtual Machine Names** section).
 
 When creating new virtual machines from scratch, without using Virt-Manager, templates are available in the Templates directory.
 
-If you use Virt-Manager to create the new VMs it is best if you create them with their required named (<COURSE_ID>-<VM_NAME>) and create their disk images in the required directory (i.e. /home/VMs/<COURSE_ID>/<NAME_OF_VM>). The virtual machine’s XML definition file can then be exported using the following command:
+If you use Virt-Manager to create the new VMs it is best if you create them with their required named (`<COURSE_ID>-<VM_NAME>`) and create their disk images in the required directory (i.e. `/home/VMs/<COURSE_ID>/<NAME_OF_VM>`). The virtual machine’s XML definition file can then be exported using the following command:
 
 ```
 virsh dumpxml <NAME_OF_VM> > /home/VMs/<COURSE_ID>/<NAME_OF_VM>/<NAME_OF_VM>.xml
 ```
 
-After creating the VM’s XML definition file from an existing VM, you must edit the file and remove the **<uuid>** setcion. Other sections such as the **<cpu>** section, **<disk>**, sections, **<interface>** sections, etc. must be updated following the standards specified in the **Libvirt_Requirements_and_Best_Practices** document.
+After creating the VM’s XML definition file from an existing VM, you must edit the file and remove the `<uuid>` section. Other sections such as the `<cpu>` section, `<disk>`, sections, `<interface>` sections, etc. must be updated following the standards specified in the **Libvirt_Requirements_and_Best_Practices** document.
 
 ## Virtual Machine Disks
 
 Virtual machine disks should be of format QCOW2 when at all possible. The size of the disks should be as small as possible to meet the requirements of the course. (This helps keep the overall size of the student media smaller).
 
-The disk image files must reside in the VM’s directory (**/home/VMs/<COURSE_ID>/<NAME_OF_VM>/**). It is important to note that if you are creating the VM using Virt-Manager, there is no intuitive way to create the images without an already existing storage pool. (You must enter the full path including the name of the disk image in the field next to the Manage button.)  It is often easier to first manually create the disk image(s) in that directory using the **qemu-img** command and then, in Virt-Manager, select it as an existing disk image when creating the VM.
+The disk image files must reside in the VM’s directory (`/home/VMs/<COURSE_ID>/<NAME_OF_VM>/`). It is important to note that if you are creating the VM using Virt-Manager, there is no intuitive way to create the images without an already existing storage pool. (You must enter the full path including the name of the disk image in the field next to the Manage button.)  It is often easier to first manually create the disk image(s) in that directory using the **qemu-img** command and then, in Virt-Manager, select it as an existing disk image when creating the VM.
 
 Example **qemu-img** command: 
 
@@ -202,7 +202,7 @@ Regarding the file permission/ownership of the virtual machine disk images. When
 
 ## Virtual Machine Storage Pools (Optional)
 
-Defining storage pools for each VM's directory can make working with the VMs easier, particularly if you are running different VMs on different lab machines and accessing them remotely using Virt-Manager. The name of these VM directory specific pool definition file should be **<NAME_OF_VM>.pool.xml**. The structure of a VM directory specific storage pool XML file is as follows:
+Defining storage pools for each VM's directory can make working with the VMs easier, particularly if you are running different VMs on different lab machines and accessing them remotely using Virt-Manager. The name of these VM directory specific pool definition file should be `<NAME_OF_VM>.pool.xml`. The structure of a VM directory specific storage pool XML file is as follows:
 
 ```
 <pool type='dir'>
@@ -220,7 +220,7 @@ Defining storage pools for each VM's directory can make working with the VMs eas
 
 ## Common Directory Storage Pools (Optional)
 
-If you are using a common directory for files used by multiple VMs such as ISO images, it is best to define storage pools for these common directories as well. The name of the pool definition files for these common directories must be **<COURSE_ID>-<POOL_NAME>.pool.xml**. The following is an example for a common ISO directory for a course:
+If you are using a common directory for files used by multiple VMs such as ISO images, it is best to define storage pools for these common directories as well. The name of the pool definition files for these common directories must be `<COURSE_ID>-<POOL_NAME>.pool.xml`. The following is an example for a common ISO directory for a course:
 
 ```
 <pool type='dir'>
@@ -245,7 +245,7 @@ If you are using the [Installer Framework](https://github.com/roncterry/install_
 
 * For VM directory specific pools you must place the pools definition files in the VM/s directly along with its other configuration and disk images. It must be named following the standard listed above. The pools will be created and activated when the VM is installed and they will be removed when the VM is removed.
 
-* For the common directory pools the files must be placed in the libvirt.cfg directory of the installer package (i.e. <COURSE_ID>/config/libvirt.cfg/ - see the [Installer Framework](https://github.com/roncterry/install_lab_env) for more details). These pools will be created and activated when the lab environment is installed and removed when it the lab environment is removed.
+* For the common directory pools the files must be placed in the libvirt.cfg directory of the installer package (i.e. `<COURSE_ID>/config/libvirt.cfg/` - see the [Installer Framework](https://github.com/roncterry/install_lab_env) for more details). These pools will be created and activated when the lab environment is installed and removed when it the lab environment is removed.
 
 # ISO Images
 
@@ -255,13 +255,13 @@ If your virtual machines require ISO images or if you want to provide ISO images
 
 If an ISO image will only be used by a single VM, the ISO image must reside in the VM’s directory along with the other disks belonging to that VM (see Virtual Machine Directory above).
 
-If an ISO image will be used by multiple VMs it must be placed in a common directory so that duplication of data can be reduced. The directory defined for this is:  **/home/iso/<COURSE_ID>** 
+If an ISO image will be used by multiple VMs it must be placed in a common directory so that duplication of data can be reduced. The directory defined for this is:  `/home/iso/<COURSE_ID>` 
 
-*Example*: **/home/iso/<COURSE_ID>/my-iso.iso**
+*Example*: `/home/iso/<COURSE_ID>/my-iso.iso`
 
 # Virtual BMC Devices (Optional)
 
-Virtual BMC devices can be useful if you need to emulate a base machine controller (BMC, DRAC, ILO, etc.) for  VM. The VirtualBMC project maintains software that does this for Libvirt VMs. In openSUSE this can be installed using the **python3-virtualbmc** package.
+Virtual BMC devices can be useful if you need to emulate a base machine controller (BMC, DRAC, ILO, etc.) for  VM. The VirtualBMC project maintains software that does this for Libvirt VMs. In openSUSE this is installed using the **python3-virtualbmc** package.
 
 ## Virtual Machine Virtual BMC Devices
 
@@ -273,9 +273,9 @@ If your lab environment requires cloud images to be used or if you want to provi
 
 ## Cloud Image Directory
 
-All cloud images related to a course should reside in a single directory named: **/home/images/<COURSE_ID>** 
+All cloud images related to a course should reside in a single directory named: `/home/images/<COURSE_ID>` 
 
-*Example*: **/home/images/<COURSE_ID>/my-cloud-image.qcow2** 
+*Example*: `/home/images/<COURSE_ID>/my-cloud-image.qcow2` 
 
 # Lab Environment Related Tools
 
@@ -293,7 +293,7 @@ There is a document named [Lab_Environment_Installer_Framework - README.md](http
 
 ## Scripts
 
-There are a number of additional scripts that have been developed that can help make developing, modifying or otherwise working with lab environments easier. These scripts are typically included in the lab machine image (in **/usr/local/bin/**). These scripts are outlined here:
+There are a number of additional scripts that have been developed that can help make developing, modifying or otherwise working with lab environments easier. These scripts are typically included in the lab machine image (in `/usr/local/bin/`). These scripts are outlined here:
 
 ### backup_lab_env.sh
 
@@ -301,9 +301,9 @@ There are a number of additional scripts that have been developed that can help 
 
 This script is part of the Lab Environment Installer Framework but is also provided as part of the standard lab machine scripts because it is usable and useful outside of the Framework as well.
 
-This script can be used to back up the current state of a currently installed entire lab environment. For the backup, it creates an installer package (using the Lab Environment Installer Framework) for the lab environment that includes archives of the current state of the VMs, ISO images, cloud images, course files, scripts, etc. These backups are created in **/install/courses/** and the directories that map to the backup/installer package are named using the following format: 
+This script can be used to back up the current state of a currently installed entire lab environment. For the backup, it creates an installer package (using the Lab Environment Installer Framework) for the lab environment that includes archives of the current state of the VMs, ISO images, cloud images, course files, scripts, etc. These backups are created in `/install/courses/` and the directories that map to the backup/installer package are named using the following format: 
 
-**<COURSE_ID>-backup-<DATE_STAMP>.<UNIX_TIME_STAMP>** 
+`<COURSE_ID>-backup-<DATE_STAMP>.<UNIX_TIME_STAMP>` 
 
 **Usage**:
 
@@ -331,7 +331,7 @@ The supported archive formats are:
 
 The p7zip formats are **strongly recommended** because they split the archive into smaller chunks that can reside on a FAT filesystem that is used by default when creating student media flash drives.
 
-Because this script creates, as its backup, an installer package using the Lab Environment Installer Framework you can also use the script to create the initial installer package for a lab environment. As long as the VMs and ISO image (and cloud images) are in the appropriate directory structure as described earlier all you need to do is create a directory **~/scripts/****_COURSE_ID_****/** that contains the following files from the Installer Framework in the following directory structure (this matches the installed directory structure created when installing a course):
+Because this script creates, as its backup, an installer package using the Lab Environment Installer Framework you can also use the script to create the initial installer package for a lab environment. As long as the VMs and ISO image (and cloud images) are in the appropriate directory structure as described earlier all you need to do is create a directory `~/scripts/<COURSE_ID>/` that contains the following files from the Installer Framework in the following directory structure (this matches the installed directory structure created when installing a course):
 
 ```
 ~/scripts/<COURSE_ID>/
@@ -354,7 +354,7 @@ Once this directory structure is created, simply running the command:
  backup_lab_env.sh <COURSE_ID> 
 ```
 
-will create a usable installer package in the **/install/courses/** directory.
+will create a usable installer package in the `/install/courses/` directory.
 
 To (re)install the course the `install_lab_env.sh` script in the lab environment installer package must be run. 
 
@@ -484,7 +484,7 @@ By default archives are created using p7zip with the compression format of LZMA2
 
 **Intro**:
 
-This scripts create archives of all VM directories inside a course directory. This should be run from inside the course VM directory (i.e. **/home/VMs/SOC101/** for a course named SOC101). 
+This scripts create archives of all VM directories inside a course directory. This should be run from inside the course VM directory (i.e. `/home/VMs/SLE201/` for a course named SLE201). 
 
 **IMPORTANT**: Like with the `create_archive.sh` script, the `create-vm-archives.sh` script **WILL NOT** backup snapshot definition files, the EFI variables file or the TMP file.
 
@@ -522,7 +522,7 @@ change-vm-disk-path.sh <course_vm_directory> <new_vm_directory_path>
 
 **Detailed Description**:
 
-For example, if I have a course named SLE201, according to the standards specified previously, all the VMs for that course should exist in a **/home/VMs/SLE201/** directory. Each of the VMs should be in their own directory (i.e. **/home/VMs/SLE201/SLE201-server1/**, **/home/VMs/SLE201/SLE201-server2**, etc.) and those VM directories should contain the disk image for that MV as well as a Libvirt XML VM definition file. The VM definition files should be named the same as the VM directory (i.e. **/home/VMs/SLE201/SLE201-server1/SLE201-server1.xml**, etc.). This script updates the path for the disk images in these VM definition files.
+For example, if I have a course named SLE201, according to the standards specified previously, all the VMs for that course should exist in a `/home/VMs/SLE201/` directory. Each of the VMs should be in their own directory (i.e. `/home/VMs/SLE201/SLE201-server1/`, `/home/VMs/SLE201/SLE201-server2`, etc.) and those VM directories should contain the disk image for that MV as well as a Libvirt XML VM definition file. The VM definition files should be named the same as the VM directory (i.e. `/home/VMs/SLE201/SLE201-server1/SLE201-server1.xml`, etc.). This script updates the path for the disk images in these VM definition files.
 
 ### host-sshfs-dirs.sh
 
@@ -597,7 +597,7 @@ sparsify-vm-disks.sh
 
 **Info**:
 
-This script backups up the home directories of either all users on a machine or a specified user or a list of users. The backups are created in the **/home/backups/** directory as .tgz files.
+This script backups up the home directories of either all users on a machine or a specified user or a list of users. The backups are created in the `/home/backups/` directory as .tgz files.
 
 It is particularly useful to run this command right after a machine has been installed to get clean backups of users’ home directories before the machine gets used.
 
@@ -611,7 +611,7 @@ backup-homedirs.sh [<username> [<username> …]]*
 
 **Info**:
 
-This script restores backed up the home directories created by the **backup-homedir.sh** script. The script expects the backups to be .tgz files in the **/home/backups/** directory.
+This script restores backed up the home directories created by the **backup-homedir.sh** script. The script expects the backups to be .tgz files in the `/home/backups/` directory.
 
 It is particularly useful to run this command right after a machine has been used by someone that has made significant changes to user’s environment such and keyboard layout, language, etc. It can also be useful when you want a known clean version of a home directory quickly..
 
@@ -661,7 +661,7 @@ cleanup-libvirt.sh
 
 **Info**:
 
-This script attempts to remove all courses that are currently installed that were installed using the Lab Environment Installer Framework. It does this by running all **remove_lab_env.sh** scripts for all courses found in **~/scripts/**.
+This script attempts to remove all courses that are currently installed that were installed using the Lab Environment Installer Framework. It does this by running all **remove_lab_env.sh** scripts for all courses found in `~/scripts/`.
 
 **Usage**:
 
@@ -690,7 +690,7 @@ It should clean off all installed courses as well as any Libvirt VMs and Libvirt
 reset-lab-machine.sh
 ```
 
-### create-live-usb.sh
+### create-live-usb.sh (obsolete)
 
 **Info**:
 
@@ -702,11 +702,11 @@ The following are the steps you follow to create a bootable student media flash 
 2. If the lab image was installed to disk, copy the lab image live ISO to your home directory 
 
 **_Note_**: If you booted into the live lab image, the lab image live ISO can be found here: 
-**/isofrom/** (for version 5.x of the lab machine image) or **/run/initramfs/isoscan/** (for version 6.x of the lab machine image).
+`/isofrom/` (for version 5.x of the lab machine image) or `/run/initramfs/isoscan/` (for version 6.x of the lab machine image).
 Look for the file that ends in .iso
 
-3. If the lab image was installed to disk, create the directory: **~/student_media**
-4. Copy the student media files into: **~/student_media**
+3. If the lab image was installed to disk, create the directory: `~/student_media`
+4. Copy the student media files into: `~/student_media`
 
 **_Note_**: If you booted into the live lab image from a flash drive that already contains the student media (i.e. the lab envionment installer and possibly other files), that student media will be located in the same directory as the live image ISO.
 The student media files include the directory(s) named with a course number (i.e. the lab environment installer), the directories named *utilities* and *videos* (if they exist) and the README files.
