@@ -1,0 +1,6 @@
+#!/bin/bash
+
+WWN_UUID=$(uuidgen)
+WWN=$(echo ${WWN_UUID} | tr -d '-' | cut -c 1-16)
+echo ${WWN}
+
