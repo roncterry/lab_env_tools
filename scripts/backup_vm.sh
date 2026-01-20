@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# version: 1.0.5
-# date: 2023-02-28
+# version: 1.0.7
+# date: 2026-01-13
 
 ### Colors ###
 RED='\e[0;31m'
@@ -163,19 +163,19 @@ mv_vm_nvram_file() {
     local VM_ABSOLUTE_PATH=${VM_PARENT_DIR}/${VM_PATH}
   fi
 
-  # Chek the live config not the on-disk config
+  # Check the live config not the on-disk config
   local NVRAM_FILE=$(virsh dumpxml ${VM_NAME} | grep nvram | cut -d \> -f 2 | cut -d \< -f 1)
   local OVMF_BIN=$(virsh dumpxml ${VM_NAME} | grep loader | cut -d \> -f 2 | cut -d \< -f 1)
 
-  echo -e "${LTCYAN}Moving NVRAM file to VM Directory ...${NC}"
+  echo -e "${LTCYAN}Moving NVRAM/OVMF files to VM Directory ...${NC}"
 
   if ! [ -z "${NVRAM_FILE}" ]
   then
     local NVRAM_FILE_NAME=$(basename ${NVRAM_FILE})
     local OVMF_BIN_NAME=$(basename ${OVMF_BIN})
-    echo -e "${LTCYAN}(NVRAM: ${NC}${NVRAM_FILE}${LTBLUE})${NC}"
 
-    # Does the live config already point to the VM's directory?
+    echo -e "${LTCYAN}(NVRAM: ${NC}${NVRAM_FILE}${LTBLUE})${NC}"
+    # Does nvram in the live config already point to the VM's directory?
     if echo ${NVRAM_FILE} | grep -q "${VM_PATH}/nvram"
     then
       local DO_CHOWN=Y
@@ -186,8 +186,12 @@ mv_vm_nvram_file() {
       else
         run sudo mv ${NVRAM_FILE} ${VM_PATH}/nvram/
       fi
+    else
+      echo -e "${LTCYAN}(Will need to copy the NVRAM file and update the config ...)${NC}"
     fi
 
+    echo -e "${LTCYAN}(OVMF: ${NC}${OVMF_BIN}${LTBLUE})${NC}"
+    # Does ovmf in the live config already point to the VM's directory?
     if echo ${OVMF_BIN} | grep -q "${VM_PATH}/nvram"
     then
       local DO_CHOWN=Y
@@ -198,26 +202,37 @@ mv_vm_nvram_file() {
       else
         run sudo cp ${OVMF_BIN} ${VM_PATH}/nvram/
       fi
+    else
+      echo -e "${LTCYAN}(Will need to copy the OVMF binary and update the config ...)${NC}"
     fi
 
-    # Does the live config point to the default NVRAM location?
+    # Does nvram in the live config point to the default NVRAM location?
     if echo ${NVRAM_FILE} | grep -q "/var/lib/libvirt/qemu/nvram"
     then
       echo -e "${LTCYAN}(Moving NVRAM file from default location to VM Directory ...)${NC}"
       run mkdir -p ${VM_PATH}/nvram
       run sudo mv ${NVRAM_FILE} ${VM_PATH}/nvram/
+      run sudo chmod -R u+rwx,g+rws,o+r ${VM_PATH}/nvram
+      run sudo chown -R ${USER}:${GROUPS} ${VM_PATH}/nvram
+      run sed -i "s+\(^ *\)<nvram>.*+\1<nvram>${VM_ABSOLUTE_PATH}/nvram/${NVRAM_FILE_NAME}</nvram>+" ${VM_PATH}/${VM_NAME}.xml
+    fi
+
+    # Does ovmf in the live config point to the default ovmf location?
+    if echo ${OVMF_BIN} | grep -q "/usr/share/qemu"
+    then
+      echo -e "${LTCYAN}(Copying OVMF binary from default location into VM Directory ...)${NC}"
+      run mkdir -p ${VM_PATH}/nvram
       run sudo cp ${OVMF_BIN} ${VM_PATH}/nvram/
       run sudo chmod -R u+rwx,g+rws,o+r ${VM_PATH}/nvram
-      run sudo chown -R ${USER}.${GROUPS} ${VM_PATH}/nvram
-      run sed -i "s+\(^ *\)<nvram>.*+\1<nvram>${VM_ABSOLUTE_PATH}/nvram/${NVRAM_FILE_NAME}</nvram>+" ${VM_PATH}/${VM_NAME}.xml
-      run sed -i "s+\(^ *\)<loader.*+\1<loader readonly=\"yes\" type=\"pflash\">${VM_ABSOLUTE_PATH}/nvram/${OVMF_BIN_NAME}</loader>+" ${VM_PATH}/${VM_NAME}.xml
+      run sudo chown -R ${USER}:${GROUPS} ${VM_PATH}/nvram
+      #run sed -i "s+\(^ *\)<loader.*+\1<loader readonly=\"yes\" type=\"pflash\">${VM_ABSOLUTE_PATH}/nvram/${OVMF_BIN_NAME}</loader>+" ${VM_PATH}/${VM_NAME}.xml
     fi
 
     case ${DO_CHOWN}
     in
       Y)
         run sudo chmod -R u+rwx,g+rws,o+r ${VM_PARENT_DIR}/${VM_NAME}/nvram
-        run sudo chown -R ${USER}.${GROUPS} ${VM_PARENT_DIR}/${VM_NAME}/nvram
+        run sudo chown -R ${USER}:${GROUPS} ${VM_PARENT_DIR}/${VM_NAME}/nvram
       ;;
     esac
   elif [ -e ${VM_PARENT_DIR}/${VM_NAME}/nvram ]
@@ -225,7 +240,7 @@ mv_vm_nvram_file() {
     echo -e "${LTCYAN}(NVRAM not defined in VM config but file is in VM Directory ...)${NC}"
     # In case the nvram dir exist in the VM's dir but not in the live config?
     run sudo chmod -R u+rwx,g+rws,o+r ${VM_PARENT_DIR}/${VM_NAME}/nvram
-    run sudo chown -R ${USER}.${GROUPS} ${VM_PARENT_DIR}/${VM_NAME}/nvram
+    run sudo chown -R ${USER}:${GROUPS} ${VM_PARENT_DIR}/${VM_NAME}/nvram
   else
     echo -e "${LTCYAN}(NVRAM not defined in VM ... Skipping)${NC}"
   fi
@@ -264,7 +279,7 @@ backup_vm_tpm() {
       echo -e "${LTCYAN}(TPM v2 found)${NC}"
       run sudo cp -R ${TPM_DIR}/tpm2 ${VM_PATH}/tpm/
     fi
-    run sudo chown -R ${USER}.${GROUPS} ${VM_PATH}/tpm
+    run sudo chown -R ${USER}:${GROUPS} ${VM_PATH}/tpm
   else
     echo -e "${LTCYAN}(No TPM files for the VM ... Skipping)${NC}"
   fi
